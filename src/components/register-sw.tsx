@@ -2,12 +2,16 @@
 
 import { useEffect } from "react";
 
+const enableSw =
+  process.env.NODE_ENV === "production" ||
+  process.env.NEXT_PUBLIC_ENABLE_OFFLINE_SW === "1";
+
 export function RegisterServiceWorker() {
   useEffect(() => {
     if (
       typeof window === "undefined" ||
       !("serviceWorker" in navigator) ||
-      process.env.NODE_ENV !== "production"
+      !enableSw
     ) {
       return;
     }

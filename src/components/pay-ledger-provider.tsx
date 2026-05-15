@@ -36,6 +36,11 @@ import {
   pruneOutboxForDeletedLocalEntry,
 } from "@/lib/outbox";
 import type { Contact, Entry, EntryKind, PayState } from "@/lib/types";
+import {
+  clearLedgerAuthBackup,
+  loadLedgerAuthBackup,
+  saveLedgerAuthBackup,
+} from "@/lib/auth-offline-backup";
 
 const empty: PayState = { contacts: [], entries: [] };
 
@@ -97,10 +102,7 @@ const LedgerContext = createContext<LedgerContextValue | null>(null);
 
 export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
-
-  const user = session?.user ?? null;
-  const userId = user?.id;
-  const authReady = status !== "loading";
+  const sessionUser = session?.user ?? null;
 
   const [dataReady, setDataReady] = useState(false);
   const [state, setState] = useState<PayState>(empty);
@@ -108,6 +110,34 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
   const [networkOnline, setNetworkOnline] = useState(
     () => typeof navigator !== "undefined" && navigator.onLine,
   );
+
+  useEffect(() => {
+    if (sessionUser?.id) {
+      saveLedgerAuthBackup(sessionUser);
+    } else if (
+      typeof navigator !== "undefined" &&
+      navigator.onLine &&
+      status === "unauthenticated"
+    ) {
+      clearLedgerAuthBackup();
+    }
+  }, [sessionUser, status]);
+
+  const authBackup = loadLedgerAuthBackup();
+  const allowOfflineAuth = !networkOnline && authBackup !== null;
+  const user: LedgerUser | null =
+    sessionUser ??
+    (allowOfflineAuth
+      ? {
+          id: authBackup.id,
+          email: authBackup.email ?? "",
+        }
+      : null);
+
+  const authReady = status !== "loading" || allowOfflineAuth;
+
+  const userId = user?.id;
+
   const [pendingOutboxCount, setPendingOutboxCount] = useState(0);
   const [syncBusy, setSyncBusy] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -654,6 +684,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
+    clearLedgerAuthBackup();
     await nextAuthSignOut({ redirect: false });
   }, []);
 
