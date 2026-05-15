@@ -1,26 +1,68 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
+  --background: #fafafa;
   --foreground: #171717;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-vazir), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-vazir), ui-sans-serif, system-ui, sans-serif;
+}
+
+@keyframes progress-glow {
+  0%,
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 0.95;
+    filter: brightness(1.12);
+  }
+}
+
+.progress-shine {
+  animation: progress-glow 2.8s ease-in-out infinite;
+}
+
+/* react-multi-date-picker: match app input height */
+.paymay-jalali-picker .rmdp-input {
+  height: auto !important;
+  min-height: 2.5rem;
+}
+
+.dark .rmdp-wrapper {
+  background-color: rgb(24 24 27);
+  color: rgb(250 250 250);
+  border-color: rgb(63 63 70);
+}
+
+.dark .rmdp-day,
+.dark .rmdp-header-values,
+.dark .rmdp-week-day {
+  color: inherit;
+}
+
+.dark .rmdp-day.rmdp-today span {
+  background-color: rgb(79 70 229);
+}
+
+.dark .rmdp-day.rmdp-selected span:not(.highlight) {
+  background-color: rgb(99 102 241);
 }
