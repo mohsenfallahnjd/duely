@@ -36,24 +36,26 @@ export function ThemeToggle({
           type="button"
           onClick={() => setTheme("light")}
           className={cn(
-            "rounded-full px-3 py-1.5 text-xs font-semibold transition",
+            "inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition",
             resolved === "light"
               ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-100"
               : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
           )}
         >
+          <Sun className="size-3.5 shrink-0" />
           Light
         </button>
         <button
           type="button"
           onClick={() => setTheme("dark")}
           className={cn(
-            "rounded-full px-3 py-1.5 text-xs font-semibold transition",
+            "inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition",
             resolved === "dark"
               ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-100"
               : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
           )}
         >
+          <Moon className="size-3.5 shrink-0" />
           Dark
         </button>
       </div>

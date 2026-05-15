@@ -30,18 +30,25 @@ export function AuthBar() {
           "dark:border-amber-900/60 dark:bg-amber-950/50 dark:text-amber-100",
         )}
       >
-        Cloud sync is off. Add{" "}
+        Cloud sync is off (set{" "}
         <code className="rounded bg-white/60 px-1 dark:bg-black/30">
-          NEXT_PUBLIC_SUPABASE_URL
+          NEXT_PUBLIC_CLOUD_SYNC
         </code>{" "}
-        and{" "}
+        to enable). When enabled, add{" "}
         <code className="rounded bg-white/60 px-1 dark:bg-black/30">
-          NEXT_PUBLIC_SUPABASE_ANON_KEY
+          DATABASE_URL
         </code>{" "}
-        to <code className="rounded bg-white/60 px-1 dark:bg-black/30">.env.local</code>{" "}
-        and run the SQL in{" "}
+        (Neon Postgres) and{" "}
         <code className="rounded bg-white/60 px-1 dark:bg-black/30">
-          supabase/migrations/00001_ledger.sql
+          AUTH_SECRET
+        </code>{" "}
+        to{" "}
+        <code className="rounded bg-white/60 px-1 dark:bg-black/30">
+          .env.local
+        </code>
+        , then run{" "}
+        <code className="rounded bg-white/60 px-1 dark:bg-black/30">
+          bun run db:push
         </code>
         .
       </p>

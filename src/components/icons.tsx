@@ -20,6 +20,7 @@ export {
   Sun,
   Tag,
   Trash2,
+  Upload,
   UserPlus,
   UserRound,
   Wallet,

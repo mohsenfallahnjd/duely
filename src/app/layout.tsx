@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Vazirmatn } from "next/font/google";
 import { PayLedgerProvider } from "@/components/pay-ledger-provider";
+import { SessionProvider } from "@/components/session-provider";
 import { RegisterServiceWorker } from "@/components/register-sw";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -48,6 +49,7 @@ export const viewport: Viewport = {
 	],
 	width: "device-width",
 	initialScale: 1,
+	userScalable: false,
 };
 
 export default function RootLayout({
@@ -63,14 +65,16 @@ export default function RootLayout({
 		>
 			<body className="min-h-full flex flex-col bg-gradient-to-b from-zinc-50 to-zinc-100/80 text-foreground dark:from-zinc-950 dark:to-zinc-900">
 				<ThemeProvider>
-					<div className="pointer-events-none fixed top-0 right-0 left-0 z-[100] flex justify-end p-3 sm:p-4">
+					{/* <div className="pointer-events-none fixed top-0 right-0 left-0 z-[100] flex justify-end p-3 sm:p-4">
 						<div className="pointer-events-auto">
 							<ThemeToggle />
 						</div>
-					</div>
+					</div> */}
 					<Analytics />
 					<RegisterServiceWorker />
-					<PayLedgerProvider>{children}</PayLedgerProvider>
+					<SessionProvider>
+						<PayLedgerProvider>{children}</PayLedgerProvider>
+					</SessionProvider>
 				</ThemeProvider>
 			</body>
 		</html>

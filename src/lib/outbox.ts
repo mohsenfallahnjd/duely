@@ -1,61 +1,11 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PayState } from "@/lib/types";
 import type { OutboxOp } from "@/lib/outbox-types";
-import * as repo from "@/lib/supabase/ledger-repo";
+import { apiSyncOutbox } from "@/lib/ledger-api-client";
 
 export type { OutboxOp } from "@/lib/outbox-types";
 
-export async function flushOutbox(
-  supabase: SupabaseClient,
-  ops: OutboxOp[],
-): Promise<void> {
-  const idMap = new Map<string, string>();
-
-  for (const op of ops) {
-    switch (op.kind) {
-      case "contact.add": {
-        const row = await repo.remoteAddContact(
-          supabase,
-          op.name,
-          op.accent,
-          op.phone,
-        );
-        idMap.set(op.localId, row.id);
-        break;
-      }
-      case "contact.remove": {
-        const id = idMap.get(op.contactId) ?? op.contactId;
-        await repo.remoteRemoveContact(supabase, id);
-        break;
-      }
-      case "entry.add": {
-        const contactId = op.contactLocalId
-          ? (idMap.get(op.contactLocalId) ?? op.contactLocalId)
-          : null;
-        const entry = await repo.remoteAddEntry(supabase, {
-          kind: op.entryKind,
-          title: op.title,
-          amount: op.amount,
-          progressAmount: op.progressAmount,
-          contactId,
-          tags: op.tags,
-          dateIso: op.dateIso,
-          note: op.note,
-        });
-        idMap.set(op.localId, entry.id);
-        break;
-      }
-      case "entry.progress": {
-        const id = idMap.get(op.entryId) ?? op.entryId;
-        await repo.remoteUpdateEntryProgress(supabase, id, op.progressAmount);
-        break;
-      }
-      case "entry.remove": {
-        const id = idMap.get(op.entryId) ?? op.entryId;
-        await repo.remoteRemoveEntry(supabase, id);
-        break;
-      }
-    }
-  }
+export async function flushOutboxClient(ops: OutboxOp[]): Promise<PayState> {
+  return apiSyncOutbox(ops);
 }
 
 export function pruneOutboxForDeletedLocalContact(

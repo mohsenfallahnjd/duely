@@ -1,6 +1,6 @@
 import type { EntryKind } from "@/lib/types";
 
-/** Serializable pending mutation for cloud sync (see `flushOutbox` in outbox.ts). */
+/** Serializable pending mutation for cloud sync (see `flushOutboxClient` in outbox.ts). */
 export type OutboxOp =
   | {
       v: 1;

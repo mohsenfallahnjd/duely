@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useSyncExternalStore, useState } from "react";
 import { AuthBar } from "@/components/auth-bar";
 import { usePayLedger } from "@/components/pay-ledger-provider";
 import { SyncStatusBanner } from "@/components/sync-status-banner";
@@ -16,9 +16,12 @@ import { cn } from "@/lib/cn";
 import { EntryCard } from "@/components/entry-card";
 import { PersianDateField } from "@/components/persian-date-field";
 import {
-  canUseDeviceContacts,
+  getContactPickerSnapshot,
   pickDeviceContacts,
+  SERVER_CONTACT_PICKER_SNAPSHOT,
+  subscribeContactPickerAvailability,
 } from "@/lib/device-contacts";
+import { parseVCardContent } from "@/lib/vcard-import";
 import {
   Calendar,
   List,
@@ -26,11 +29,12 @@ import {
   MoreHorizontal,
   PlusCircle,
   Smartphone,
-  Sparkles,
   Tag,
+  Upload,
   Wallet,
 } from "@/components/icons";
-import { Link } from "@/components/link";
+import { LedgerLoadingSplash } from "@/components/ledger-loading-splash";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 type Filter = "all" | EntryKind;
 type NavTab = "list" | "add" | "more";
@@ -54,7 +58,18 @@ export function PayDashboard() {
   const [filter, setFilter] = useState<Filter>("all");
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [newContactName, setNewContactName] = useState("");
-  const [contactImportBusy, setContactImportBusy] = useState(false);
+  const [contactImportKind, setContactImportKind] = useState<
+    "device" | "vcf" | null
+  >(null);
+  const [contactImportNotice, setContactImportNotice] = useState<string | null>(
+    null,
+  );
+  const contactPicker = useSyncExternalStore(
+    subscribeContactPickerAvailability,
+    getContactPickerSnapshot,
+    () => SERVER_CONTACT_PICKER_SNAPSHOT,
+  );
+  const vcfInputRef = useRef<HTMLInputElement>(null);
 
   const [kind, setKind] = useState<EntryKind>("payment");
   const [title, setTitle] = useState("");
@@ -140,12 +155,7 @@ export function PayDashboard() {
   }
 
   if (!ready) {
-    return (
-      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-zinc-500">
-        <LoaderCircle className="size-8 animate-spin text-indigo-500" />
-        <p className="text-sm">Loading your ledger…</p>
-      </div>
-    );
+    return <LedgerLoadingSplash />;
   }
 
   return (
@@ -512,13 +522,18 @@ export function PayDashboard() {
 
           <div className="mb-6 space-y-4">
             <AuthBar />
-            <Link
-              href="https://vercel.com"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-xs font-medium text-zinc-700 shadow-sm transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:border-zinc-700"
-            >
-              <Sparkles className="size-3.5 text-indigo-500" />
-              Ready for Vercel
-            </Link>
+          </div>
+
+          <div className="mb-6 rounded-2xl border border-zinc-200/80 bg-white/80 p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/70">
+            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Appearance
+            </p>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+              <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                Light or dark mode
+              </span>
+              <ThemeToggle variant="segment" />
+            </div>
           </div>
 
           <div className="mb-6 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
@@ -542,19 +557,54 @@ export function PayDashboard() {
               >
                 Add
               </button>
+              <input
+                ref={vcfInputRef}
+                id="paymay-vcf-import"
+                type="file"
+                accept=".vcf,.vcard,text/vcard,text/x-vcard,application/vcard"
+                className="sr-only"
+                tabIndex={-1}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!f) return;
+                  setContactImportNotice(null);
+                  void (async () => {
+                    setContactImportKind("vcf");
+                    try {
+                      const text = await f.text();
+                      const picks = parseVCardContent(text);
+                      if (picks.length === 0) {
+                        setContactImportNotice(
+                          "No contacts found in that file. Export from your phone as .vcf (often “Share contact” or Contacts → Export).",
+                        );
+                        return;
+                      }
+                      for (const p of picks) {
+                        await addContact(p.name, { phone: p.phone });
+                      }
+                    } finally {
+                      setContactImportKind(null);
+                    }
+                  })();
+                }}
+              />
               <button
                 type="button"
-                disabled={!canUseDeviceContacts() || contactImportBusy}
+                disabled={
+                  !contactPicker.available || contactImportKind !== null
+                }
                 onClick={() => {
+                  setContactImportNotice(null);
                   void (async () => {
-                    setContactImportBusy(true);
+                    setContactImportKind("device");
                     try {
                       const picks = await pickDeviceContacts();
                       for (const p of picks) {
                         await addContact(p.name, { phone: p.phone });
                       }
                     } finally {
-                      setContactImportBusy(false);
+                      setContactImportKind(null);
                     }
                   })();
                 }}
@@ -562,18 +612,59 @@ export function PayDashboard() {
                   "inline-flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-800 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200",
                 )}
               >
-                {contactImportBusy ? (
+                {contactImportKind === "device" ? (
                   <LoaderCircle className="size-3.5 animate-spin" />
                 ) : (
                   <Smartphone className="size-3.5" />
                 )}
-                Import from device
+                Pick from device
+              </button>
+              <button
+                type="button"
+                disabled={contactImportKind !== null}
+                onClick={() => {
+                  setContactImportNotice(null);
+                  vcfInputRef.current?.click();
+                }}
+                aria-controls="paymay-vcf-import"
+                className={cn(
+                  "inline-flex items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-900 disabled:opacity-50 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-100",
+                )}
+              >
+                {contactImportKind === "vcf" ? (
+                  <LoaderCircle className="size-3.5 animate-spin" />
+                ) : (
+                  <Upload className="size-3.5" />
+                )}
+                Import .vcf file
               </button>
             </div>
-            {!canUseDeviceContacts() && (
+            {contactImportNotice && (
+              <p
+                className="mt-2 text-[11px] leading-relaxed text-amber-800 dark:text-amber-200/90"
+                role="status"
+              >
+                {contactImportNotice}
+              </p>
+            )}
+            {!contactPicker.available &&
+              (contactPicker.reason === "insecure" ||
+                contactPicker.hint.length > 0) && (
               <p className="mt-2 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
-                Device contacts are not available in this browser (often needs
-                Chrome/Android over HTTPS).
+                <span className="font-medium text-zinc-600 dark:text-zinc-300">
+                  {contactPicker.reason === "insecure"
+                    ? "Connection not secure."
+                    : "Built-in contact picker isn’t available here."}
+                </span>{" "}
+                {contactPicker.hint}{" "}
+                <span className="text-zinc-500 dark:text-zinc-400">
+                  On iPhone or desktop, export contacts to a{" "}
+                  <strong className="font-medium text-zinc-600 dark:text-zinc-300">
+                    .vcf
+                  </strong>{" "}
+                  file and tap{" "}
+                  <strong className="font-medium">Import .vcf file</strong>.
+                </span>
               </p>
             )}
             <ul className="mt-4 max-h-48 space-y-1 overflow-auto rounded-xl border border-zinc-200/80 bg-white/50 p-2 text-sm dark:border-zinc-800 dark:bg-zinc-950/50">
@@ -619,10 +710,10 @@ export function PayDashboard() {
 
           <p className="text-center text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-500">
             {user && syncEnabled
-              ? "Signed in — your ledger is stored in your Supabase project (per-account, row-level security)."
+              ? "Signed in — your ledger is stored in Postgres (scoped to your account on the server)."
               : syncEnabled
                 ? "Sign in to sync contacts and entries to your account. Until then, data stays in this browser only."
-                : "Add Supabase env keys and run the migration SQL to enable register / login and cloud sync. Until then, data stays in local storage."}
+                : "Set DATABASE_URL and AUTH_SECRET (and run db:push) to enable register / login and cloud sync. Until then, data stays in local storage."}
           </p>
         </>
       )}

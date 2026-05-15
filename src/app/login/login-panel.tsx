@@ -1,9 +1,9 @@
 "use client";
 
+import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Link } from "@/components/link";
-import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import { LoaderCircle } from "@/components/icons";
 import { cn } from "@/lib/cn";
 
@@ -12,65 +12,29 @@ export function LoginPanel() {
   const searchParams = useSearchParams();
   const err = searchParams.get("error");
 
-  const supabase = createBrowserSupabaseClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState<string | null>(
-    err === "auth"
-      ? "Sign-in link expired or is invalid."
-      : err === "config"
-        ? "Server is missing Supabase configuration."
-        : err === "oauth"
-          ? "Could not complete sign-in."
-          : null,
+    err === "CredentialsSignin"
+      ? "Invalid email or password."
+      : err
+        ? "Sign-in failed."
+        : null,
   );
   const [loading, setLoading] = useState(false);
 
-  if (!supabase) {
-    return (
-      <main className="mx-auto max-w-md px-4 pb-16 pt-20 sm:pt-24">
-        <div className="rounded-3xl border border-zinc-200 bg-white/80 p-8 text-center text-sm leading-relaxed text-zinc-600 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/70 dark:text-zinc-400">
-          <p className="font-semibold text-zinc-900 dark:text-zinc-100">
-            Supabase not configured
-          </p>
-          <p className="mt-3">
-            Add{" "}
-            <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs dark:bg-zinc-900">
-              NEXT_PUBLIC_SUPABASE_URL
-            </code>{" "}
-            and{" "}
-            <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs dark:bg-zinc-900">
-              NEXT_PUBLIC_SUPABASE_ANON_KEY
-            </code>{" "}
-            to{" "}
-            <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs dark:bg-zinc-900">
-              .env.local
-            </code>{" "}
-            and restart the dev server.
-          </p>
-          <Link
-            href="/"
-            className="mt-6 inline-flex text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400"
-          >
-            ← Back to PayMay
-          </Link>
-        </div>
-      </main>
-    );
-  }
-
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!supabase) return;
     setLoading(true);
     setMessage(null);
-    const { error } = await supabase.auth.signInWithPassword({
+    const result = await signIn("credentials", {
       email,
       password,
+      redirect: false,
     });
     setLoading(false);
-    if (error) {
-      setMessage(error.message);
+    if (result?.error) {
+      setMessage("Invalid email or password.");
       return;
     }
     router.push("/");

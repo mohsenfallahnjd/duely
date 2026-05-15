@@ -1,5 +1,7 @@
 "use client";
 
+import { signOut as nextAuthSignOut, useSession } from "next-auth/react";
+import type { Session } from "next-auth";
 import {
   createContext,
   useCallback,
@@ -9,9 +11,16 @@ import {
   useRef,
   useState,
 } from "react";
-import type { User } from "@supabase/supabase-js";
 import { ACCENT_PRESETS } from "@/lib/constants";
 import { loadLocal, saveLocal } from "@/lib/local-ledger";
+import {
+  apiAddContact,
+  apiAddEntry,
+  apiFetchLedger,
+  apiRemoveContact,
+  apiRemoveEntry,
+  apiUpdateEntryProgress,
+} from "@/lib/ledger-api-client";
 import {
   appendOutbox,
   clearOutbox,
@@ -22,13 +31,11 @@ import {
 } from "@/lib/remote-cache";
 import type { OutboxOp } from "@/lib/outbox-types";
 import {
-  flushOutbox,
+  flushOutboxClient,
   pruneOutboxForDeletedLocalContact,
   pruneOutboxForDeletedLocalEntry,
 } from "@/lib/outbox";
 import type { Contact, Entry, EntryKind, PayState } from "@/lib/types";
-import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
-import * as repo from "@/lib/supabase/ledger-repo";
 
 const empty: PayState = { contacts: [], entries: [] };
 
@@ -39,13 +46,20 @@ function setsFromRemote(state: PayState) {
   };
 }
 
+const syncEnabled =
+  typeof process.env.NEXT_PUBLIC_CLOUD_SYNC === "undefined" ||
+  (process.env.NEXT_PUBLIC_CLOUD_SYNC !== "0" &&
+    process.env.NEXT_PUBLIC_CLOUD_SYNC !== "false");
+
+type LedgerUser = NonNullable<Session["user"]>;
+
 type LedgerContextValue = {
   ready: boolean;
   syncEnabled: boolean;
-  user: User | null;
+  user: LedgerUser | null;
   /** Browser online — logged-out users may ignore. */
   networkOnline: boolean;
-  /** Logged in: number of mutations waiting for Supabase. */
+  /** Logged in: number of mutations waiting for sync. */
   pendingOutboxCount: number;
   /** Initial load or flushing outbox / refetching. */
   syncBusy: boolean;
@@ -82,11 +96,12 @@ type LedgerContextValue = {
 const LedgerContext = createContext<LedgerContextValue | null>(null);
 
 export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
-  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
-  const syncEnabled = Boolean(supabase);
+  const { data: session, status } = useSession();
 
-  const [user, setUser] = useState<User | null>(null);
-  const [authReady, setAuthReady] = useState(false);
+  const user = session?.user ?? null;
+  const userId = user?.id;
+  const authReady = status !== "loading";
+
   const [dataReady, setDataReady] = useState(false);
   const [state, setState] = useState<PayState>(empty);
 
@@ -102,27 +117,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
   );
   const flushAndResyncRef = useRef<(() => Promise<void>) | null>(null);
 
-  useEffect(() => {
-    if (!supabase) {
-      const id = window.setTimeout(() => setAuthReady(true), 0);
-      return () => window.clearTimeout(id);
-    }
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    void supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setAuthReady(true);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [supabase]);
-
-  const userId = user?.id;
+  const cloudActive = syncEnabled && Boolean(userId);
 
   useEffect(() => {
     const online = () => {
@@ -139,16 +134,15 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const flushAndResync = useCallback(async () => {
-    if (!supabase || !userId || !navigator.onLine) return;
+    if (!cloudActive || !userId || !navigator.onLine) return;
     const ops = loadOutbox(userId);
     if (ops.length === 0) return;
     setSyncBusy(true);
     setSyncError(null);
     try {
-      await flushOutbox(supabase, ops);
+      const remote = await flushOutboxClient(ops);
       clearOutbox(userId);
       setPendingOutboxCount(0);
-      const remote = await repo.fetchLedger(supabase);
       setState(remote);
       const sets = setsFromRemote(remote);
       serverIdsRef.current = sets;
@@ -166,7 +160,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setSyncBusy(false);
     }
-  }, [supabase, userId]);
+  }, [cloudActive, userId]);
 
   useEffect(() => {
     flushAndResyncRef.current = flushAndResync;
@@ -175,7 +169,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
   /** If we have queued mutations and the browser is online, try to flush (with small delay for batching). */
   useEffect(() => {
     if (!authReady || !dataReady) return;
-    if (!supabase || !userId || !networkOnline) return;
+    if (!cloudActive || !networkOnline) return;
     if (syncBusy || syncError) return;
     if (pendingOutboxCount === 0) return;
     const t = window.setTimeout(() => {
@@ -185,8 +179,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
   }, [
     authReady,
     dataReady,
-    supabase,
-    userId,
+    cloudActive,
     networkOnline,
     pendingOutboxCount,
     syncBusy,
@@ -196,7 +189,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!authReady) return;
 
-    if (!supabase || !userId) {
+    if (!cloudActive || !userId) {
       serverIdsRef.current = { contacts: new Set(), entries: new Set() };
       const id = window.setTimeout(() => {
         setDataReady(false);
@@ -234,7 +227,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
       if (online) {
         try {
           if (outbox.length === 0) {
-            const remote = await repo.fetchLedger(supabase);
+            const remote = await apiFetchLedger();
             if (cancelled) return;
             setState(remote);
             const sets = setsFromRemote(remote);
@@ -246,12 +239,10 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
             });
           } else if (persisted) {
             setState(persisted.state);
-            await flushOutbox(supabase, outbox);
+            const remote = await flushOutboxClient(outbox);
             if (cancelled) return;
             clearOutbox(userId);
             setPendingOutboxCount(0);
-            const remote = await repo.fetchLedger(supabase);
-            if (cancelled) return;
             setState(remote);
             const sets = setsFromRemote(remote);
             serverIdsRef.current = sets;
@@ -261,10 +252,10 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
               serverEntryIds: [...sets.entries],
             });
           } else {
+            const remote = await flushOutboxClient(outbox);
+            if (cancelled) return;
             clearOutbox(userId);
             setPendingOutboxCount(0);
-            const remote = await repo.fetchLedger(supabase);
-            if (cancelled) return;
             setState(remote);
             const sets = setsFromRemote(remote);
             serverIdsRef.current = sets;
@@ -308,11 +299,11 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [authReady, supabase, userId]);
+  }, [authReady, cloudActive, userId]);
 
   useEffect(() => {
     if (!authReady || !dataReady) return;
-    if (!supabase || !userId) {
+    if (!cloudActive || !userId) {
       saveLocal(state);
       return;
     }
@@ -321,10 +312,10 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
       serverContactIds: [...serverIdsRef.current.contacts],
       serverEntryIds: [...serverIdsRef.current.entries],
     });
-  }, [authReady, dataReady, state, supabase, userId]);
+  }, [authReady, dataReady, state, cloudActive, userId]);
 
   const resync = useCallback(async () => {
-    if (!supabase || !userId) return;
+    if (!cloudActive || !userId) return;
     if (!navigator.onLine) {
       setSyncError("You are offline.");
       return;
@@ -333,12 +324,14 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
     setSyncBusy(true);
     setSyncError(null);
     try {
+      let remote: PayState;
       if (ops.length > 0) {
-        await flushOutbox(supabase, ops);
+        remote = await flushOutboxClient(ops);
         clearOutbox(userId);
         setPendingOutboxCount(0);
+      } else {
+        remote = await apiFetchLedger();
       }
-      const remote = await repo.fetchLedger(supabase);
       setState(remote);
       const sets = setsFromRemote(remote);
       serverIdsRef.current = sets;
@@ -356,7 +349,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setSyncBusy(false);
     }
-  }, [supabase, userId]);
+  }, [cloudActive, userId]);
 
   const contactsById = useMemo(() => {
     const m = new Map<string, Contact>();
@@ -376,8 +369,6 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
     }
     return { payments, debtOutstanding, pendingOutstanding };
   }, [state.entries]);
-
-  const cloudActive = Boolean(supabase && userId);
 
   const tryRemoteOrQueue = useCallback(
     async (op: OutboxOp, remote: () => Promise<void>) => {
@@ -404,15 +395,10 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
         ACCENT_PRESETS[state.contacts.length % ACCENT_PRESETS.length]!;
       const phone = opts?.phone?.trim() || null;
 
-      if (cloudActive) {
-        if (navigator.onLine && supabase) {
+      if (cloudActive && userId) {
+        if (navigator.onLine) {
           try {
-            const row = await repo.remoteAddContact(
-              supabase,
-              trimmed,
-              accent,
-              phone,
-            );
+            const row = await apiAddContact(trimmed, accent, phone);
             serverIdsRef.current.contacts.add(row.id);
             setState((s) => ({ ...s, contacts: [...s.contacts, row] }));
             return;
@@ -421,7 +407,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
           }
         }
         const localId = crypto.randomUUID();
-        appendOutbox(userId!, {
+        appendOutbox(userId, {
           v: 1,
           kind: "contact.add",
           localId,
@@ -429,7 +415,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
           accent,
           phone,
         });
-        setPendingOutboxCount(loadOutbox(userId!).length);
+        setPendingOutboxCount(loadOutbox(userId).length);
         setState((s) => ({
           ...s,
           contacts: [
@@ -453,7 +439,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
         ],
       }));
     },
-    [cloudActive, state.contacts.length, supabase, userId],
+    [cloudActive, state.contacts.length, userId],
   );
 
   const removeContact = useCallback(
@@ -474,8 +460,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
         await tryRemoteOrQueue(
           { v: 1, kind: "contact.remove", contactId: id },
           async () => {
-            if (!supabase) return;
-            await repo.remoteRemoveContact(supabase, id);
+            await apiRemoveContact(id);
           },
         );
       } else {
@@ -484,7 +469,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
         setPendingOutboxCount(pruned.length);
       }
     },
-    [cloudActive, supabase, tryRemoteOrQueue, userId],
+    [cloudActive, tryRemoteOrQueue, userId],
   );
 
   const addEntry = useCallback(
@@ -518,10 +503,10 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
       const dateIso = input.date;
       const amount = Math.max(0, input.amount);
 
-      if (cloudActive) {
-        if (navigator.onLine && supabase) {
+      if (cloudActive && userId) {
+        if (navigator.onLine) {
           try {
-            const entry = await repo.remoteAddEntry(supabase, {
+            const entry = await apiAddEntry({
               kind: input.kind,
               title,
               amount,
@@ -541,7 +526,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
         const localId = crypto.randomUUID();
         const createdAt = new Date().toISOString();
         const contactLocalId = input.contactId;
-        appendOutbox(userId!, {
+        appendOutbox(userId, {
           v: 1,
           kind: "entry.add",
           localId,
@@ -555,7 +540,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
           note,
           createdAt,
         });
-        setPendingOutboxCount(loadOutbox(userId!).length);
+        setPendingOutboxCount(loadOutbox(userId).length);
         const localEntry: Entry = {
           id: localId,
           kind: input.kind,
@@ -586,7 +571,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
       };
       setState((s) => ({ ...s, entries: [entry, ...s.entries] }));
     },
-    [cloudActive, supabase, userId],
+    [cloudActive, userId],
   );
 
   const updateEntryProgress = useCallback(
@@ -608,7 +593,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
         };
       });
 
-      if (skip || !cloudActive || !userId || !supabase) return;
+      if (skip || !cloudActive || !userId) return;
 
       const onServer = serverIdsRef.current.entries.has(id);
       const op: OutboxOp = {
@@ -626,7 +611,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
 
       if (navigator.onLine) {
         try {
-          await repo.remoteUpdateEntryProgress(supabase, id, nextVal);
+          await apiUpdateEntryProgress(id, nextVal);
         } catch (e) {
           console.error(e);
           appendOutbox(userId, op);
@@ -637,7 +622,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
         setPendingOutboxCount(loadOutbox(userId).length);
       }
     },
-    [cloudActive, userId, supabase],
+    [cloudActive, userId],
   );
 
   const removeEntry = useCallback(
@@ -656,8 +641,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
         await tryRemoteOrQueue(
           { v: 1, kind: "entry.remove", entryId: id },
           async () => {
-            if (!supabase) return;
-            await repo.remoteRemoveEntry(supabase, id);
+            await apiRemoveEntry(id);
           },
         );
       } else {
@@ -666,12 +650,12 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
         setPendingOutboxCount(pruned.length);
       }
     },
-    [cloudActive, supabase, tryRemoteOrQueue, userId],
+    [cloudActive, tryRemoteOrQueue, userId],
   );
 
   const signOut = useCallback(async () => {
-    if (supabase) await supabase.auth.signOut();
-  }, [supabase]);
+    await nextAuthSignOut({ redirect: false });
+  }, []);
 
   const ready = authReady && dataReady;
 
