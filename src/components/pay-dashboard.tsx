@@ -219,9 +219,9 @@ export function PayDashboard() {
         "pb-[calc(4.75rem+env(safe-area-inset-bottom,0px))]",
       )}
     >
-      <SyncStatusBanner />
       {nav === "list" && (
         <>
+          <SyncStatusBanner />
           <header className="mb-4 sm:mb-6">
             <div className="flex items-start justify-between gap-3 sm:block">
               <div className="min-w-0">

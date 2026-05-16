@@ -1,5 +1,6 @@
 /** Curated icons — import from here for consistency (`@/components/icons`). */
 export {
+  AlertCircle,
   ArrowDownRight,
   ArrowRight,
   ArrowUpRight,

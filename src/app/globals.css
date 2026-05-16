@@ -41,27 +41,32 @@ body {
   animation: progress-glow 2.8s ease-in-out infinite;
 }
 
-@keyframes ledger-quip-in {
-  from {
-    opacity: 0;
-    transform: translateY(0.35rem) scale(0.99);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+@media (prefers-reduced-motion: reduce) {
+  .progress-shine {
+    animation: none;
   }
 }
 
-.ledger-quip-in {
-  animation: ledger-quip-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+@keyframes ledger-load-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+.ledger-load-bar {
+  height: 100%;
+  width: 45%;
+  animation: ledger-load-indeterminate 1.15s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ledger-quip-in {
+  .ledger-load-bar {
     animation: none;
-  }
-  .progress-shine {
-    animation: none;
+    width: 100%;
+    opacity: 0.7;
   }
 }
 
