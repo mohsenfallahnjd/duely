@@ -42,7 +42,6 @@ export function EntryCard({
   activeTag,
   onTagClick,
 }: Props) {
-  const p = percent(entry);
   const remaining = Math.max(0, entry.amount - entry.progressAmount);
   const variant =
     entry.kind === "payment"
@@ -147,19 +146,21 @@ export function EntryCard({
       </div>
 
       <div className="mt-4 space-y-2">
-        <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
-          <span>
-            {entry.kind === "payment"
-              ? "Logged spend"
-              : entry.kind === "debt"
-                ? "Payoff progress"
-                : "Settlement progress"}
-          </span>
-          <span className="tabular-nums font-medium text-zinc-700 dark:text-zinc-300">
-            {Math.round(p)}%
-          </span>
-        </div>
-        <ProgressTrack percent={p} variant={variant} />
+        {entry.kind !== "payment" && (
+          <>
+            <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
+              <span>
+                {entry.kind === "debt"
+                  ? "Payoff progress"
+                  : "Settlement progress"}
+              </span>
+              <span className="tabular-nums font-medium text-zinc-700 dark:text-zinc-300">
+                {Math.round(percent(entry))}%
+              </span>
+            </div>
+            <ProgressTrack percent={percent(entry)} variant={variant} />
+          </>
+        )}
         {entry.kind !== "payment" && (
           <label className="mt-1 flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
             <CreditCard className="size-3.5 shrink-0" />

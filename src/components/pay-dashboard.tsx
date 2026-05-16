@@ -35,6 +35,11 @@ import {
 } from "@/components/icons";
 import { LedgerLoadingSplash } from "@/components/ledger-loading-splash";
 import { ThemeToggle } from "@/components/theme-toggle";
+import {
+  formatAmountInputFromRaw,
+  parseAmountInputToNumber,
+} from "@/lib/amount-input";
+import { tomanToPersianWords } from "@/lib/persian-amount-words";
 
 type Filter = "all" | EntryKind;
 type NavTab = "list" | "add" | "more";
@@ -107,6 +112,19 @@ export function PayDashboard() {
   const activeTagSpend = tagFilter ? tagPaymentByTag.get(tagFilter) ?? 0 : 0;
   const activeTagPercent = tagSpendPercent(totalPayments, activeTagSpend);
 
+  const amountVerbal = useMemo(() => {
+    const n = parseAmountInputToNumber(amount);
+    if (amount === "" || !Number.isFinite(n) || n <= 0) return null;
+    return `${tomanToPersianWords(Math.trunc(n))} تومان`;
+  }, [amount]);
+
+  const progressVerbal = useMemo(() => {
+    if (kind === "payment") return null;
+    const n = parseAmountInputToNumber(progressAmount);
+    if (progressAmount === "" || !Number.isFinite(n) || n < 0) return null;
+    return `${tomanToPersianWords(Math.trunc(n))} تومان`;
+  }, [kind, progressAmount]);
+
   function toggleTag(tag: string) {
     setPickedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
@@ -115,14 +133,12 @@ export function PayDashboard() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const amt = Number(amount);
+    const amt = parseAmountInputToNumber(amount);
     if (!Number.isFinite(amt) || amt <= 0) return;
     const prog =
       kind === "payment"
         ? amt
-        : Number(progressAmount) >= 0
-          ? Number(progressAmount)
-          : 0;
+        : Math.max(0, parseAmountInputToNumber(progressAmount) || 0);
     try {
       await addEntry({
         kind,
@@ -391,11 +407,23 @@ export function PayDashboard() {
                 <input
                   required
                   inputMode="decimal"
+                  autoComplete="off"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="0.00"
-                  className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-zinc-900 outline-none focus:border-indigo-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                  onChange={(e) =>
+                    setAmount(formatAmountInputFromRaw(e.target.value))
+                  }
+                  placeholder="0"
+                  dir="ltr"
+                  className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-zinc-900 outline-none focus:border-indigo-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 tabular-nums"
                 />
+                {amountVerbal && (
+                  <p
+                    className="mt-1.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400"
+                    dir="rtl"
+                  >
+                    {amountVerbal}
+                  </p>
+                )}
               </label>
               {kind !== "payment" && (
                 <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 sm:col-span-2">
@@ -404,11 +432,25 @@ export function PayDashboard() {
                     : "Already settled / received"}
                   <input
                     inputMode="decimal"
+                    autoComplete="off"
                     value={progressAmount}
-                    onChange={(e) => setProgressAmount(e.target.value)}
-                    placeholder="0.00"
-                    className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-zinc-900 outline-none focus:border-indigo-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+                    onChange={(e) =>
+                      setProgressAmount(
+                        formatAmountInputFromRaw(e.target.value),
+                      )
+                    }
+                    placeholder="0"
+                    dir="ltr"
+                    className="mt-1.5 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-zinc-900 outline-none focus:border-indigo-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 tabular-nums"
                   />
+                  {progressVerbal && (
+                    <p
+                      className="mt-1.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400"
+                      dir="rtl"
+                    >
+                      {progressVerbal}
+                    </p>
+                  )}
                 </label>
               )}
               <div className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
