@@ -12,7 +12,7 @@ export interface Entry {
   id: string;
   kind: EntryKind;
   title: string;
-  /** Total amount: spent (payment), owed (debt), or expected (pending) */
+  /** Total amount: spent (payment), owed (debt), or expected to receive (pending / “expected in”) */
   amount: number;
   /** For debt: paid so far. For pending: received/settled so far. Ignored for payment. */
   progressAmount: number;

@@ -1,10 +1,21 @@
 "use client";
 
-import { useMemo, useRef, useSyncExternalStore, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useSyncExternalStore,
+  useState,
+} from "react";
 import { AuthBar } from "@/components/auth-bar";
 import { usePayLedger } from "@/components/pay-ledger-provider";
 import { SyncStatusBanner } from "@/components/sync-status-banner";
-import { KIND_META, POPULAR_TAGS } from "@/lib/constants";
+import {
+  KIND_META,
+  POPULAR_TAGS,
+  SHOW_SETTLED_STORAGE_KEY,
+} from "@/lib/constants";
+import { isEntryFullySettled } from "@/lib/entry-helpers";
 import type { EntryKind } from "@/lib/types";
 import { TomanAmount } from "@/components/toman-icon";
 import {
@@ -24,6 +35,7 @@ import {
 import { parseVCardContent } from "@/lib/vcard-import";
 import {
   Calendar,
+  Info,
   List,
   LoaderCircle,
   MoreHorizontal,
@@ -85,6 +97,19 @@ export function PayDashboard() {
   const [note, setNote] = useState("");
   const [pickedTags, setPickedTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState("");
+  const [showSettledItems, setShowSettledItems] = useState(false);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      try {
+        if (localStorage.getItem(SHOW_SETTLED_STORAGE_KEY) === "1") {
+          setShowSettledItems(true);
+        }
+      } catch {
+        /* ignore */
+      }
+    });
+  }, []);
 
   const { totalPayments, byTag: tagPaymentByTag } = useMemo(
     () => computeTagPaymentShares(state.entries),
@@ -96,7 +121,7 @@ export function PayDashboard() {
     [state.entries],
   );
 
-  const filtered = useMemo(() => {
+  const baseFiltered = useMemo(() => {
     let list =
       filter === "all"
         ? state.entries
@@ -108,6 +133,16 @@ export function PayDashboard() {
     }
     return list;
   }, [state.entries, filter, tagFilter]);
+
+  const filtered = useMemo(() => {
+    if (showSettledItems) return baseFiltered;
+    return baseFiltered.filter((e) => !isEntryFullySettled(e));
+  }, [baseFiltered, showSettledItems]);
+
+  const emptyBecauseSettledOnly =
+    !showSettledItems &&
+    baseFiltered.length > 0 &&
+    filtered.length === 0;
 
   const activeTagSpend = tagFilter ? tagPaymentByTag.get(tagFilter) ?? 0 : 0;
   const activeTagPercent = tagSpendPercent(totalPayments, activeTagSpend);
@@ -184,15 +219,52 @@ export function PayDashboard() {
       <SyncStatusBanner />
       {nav === "list" && (
         <>
-          <header className="mb-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">
-              PayMay
-            </p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white sm:text-3xl">
-              Ledger
-            </h1>
-            <p className="mt-1.5 text-sm text-zinc-600 dark:text-zinc-400">
-              Payments, debts, and pending amounts — with tags and contacts.
+          <header className="mb-4 sm:mb-6">
+            <div className="flex items-start justify-between gap-3 sm:block">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400 sm:text-xs">
+                  PayMay
+                </p>
+                <h1 className="mt-0.5 truncate text-lg font-semibold tracking-tight text-zinc-900 dark:text-white sm:mt-1 sm:text-2xl sm:text-3xl">
+                  Ledger
+                </h1>
+              </div>
+              <details className="relative shrink-0 sm:hidden">
+                <summary
+                  className={cn(
+                    "flex cursor-pointer list-none items-center justify-center rounded-lg border border-zinc-200/90 bg-white/90 p-1.5 text-zinc-500 shadow-sm outline-none transition",
+                    "hover:border-zinc-300 hover:text-zinc-700 active:scale-[0.97]",
+                    "dark:border-zinc-700 dark:bg-zinc-900/90 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:text-zinc-200",
+                    "[&::-webkit-details-marker]:hidden",
+                  )}
+                >
+                  <Info className="size-3.5 shrink-0" aria-hidden />
+                  <span className="sr-only">General information about the ledger</span>
+                </summary>
+                <div
+                  className={cn(
+                    "absolute end-0 z-20 mt-2 w-[min(calc(100vw-2rem),17rem)] rounded-xl border border-zinc-200/90 bg-white/95 p-3 text-[11px] leading-relaxed text-zinc-600 shadow-lg backdrop-blur-sm",
+                    "dark:border-zinc-700 dark:bg-zinc-950/95 dark:text-zinc-400",
+                  )}
+                >
+                  <p className="font-medium text-zinc-800 dark:text-zinc-200">
+                    How this screen works
+                  </p>
+                  <p className="mt-1.5 text-zinc-600 dark:text-zinc-400">
+                    Track payments, debts, and money you expect to receive. Use
+                    tags and contacts to organize. Fully settled debts and
+                    expected-in items stay out of this list until you enable{" "}
+                    <strong className="font-medium text-zinc-700 dark:text-zinc-300">
+                      Show settled items
+                    </strong>{" "}
+                    under More.
+                  </p>
+                </div>
+              </details>
+            </div>
+            <p className="mt-1.5 hidden text-sm text-zinc-600 sm:block dark:text-zinc-400">
+              Payments, debts, and money you expect to receive — with tags and
+              contacts.
             </p>
           </header>
 
@@ -212,7 +284,7 @@ export function PayDashboard() {
               }
             />
             <SummaryCard
-              label="Pending"
+              label="Expected left"
               value={totals.pendingOutstanding}
               className="border-amber-200/60 bg-gradient-to-br from-amber-50/90 to-white dark:border-amber-900/50 dark:from-amber-950/40 dark:to-zinc-950"
               icon={<Wallet className="size-4 text-amber-600 dark:text-amber-400" />}
@@ -232,13 +304,7 @@ export function PayDashboard() {
                     : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800",
                 )}
               >
-                {k === "all"
-                  ? "All"
-                  : k === "payment"
-                    ? "Payment"
-                    : k === "debt"
-                      ? "Debt"
-                      : "Pending"}
+                {k === "all" ? "All" : KIND_META[k].label}
               </button>
             ))}
           </div>
@@ -309,22 +375,59 @@ export function PayDashboard() {
               <div className="rounded-3xl border border-dashed border-zinc-300 bg-zinc-50/50 px-6 py-14 text-center dark:border-zinc-800 dark:bg-zinc-950/40">
                 <Wallet className="mx-auto size-10 text-zinc-400" />
                 <p className="mt-4 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  {tagFilter
-                    ? `No entries with tag “${tagFilter}”`
-                    : "No entries yet"}
+                  {emptyBecauseSettledOnly
+                    ? "No active debts or expected items"
+                    : tagFilter
+                      ? `No entries with tag “${tagFilter}”`
+                      : "No entries yet"}
                 </p>
                 <p className="mt-1 text-xs text-zinc-500">
-                  {tagFilter
-                    ? "Clear the tag filter or pick another tag."
-                    : "Add one from the Add tab."}
+                  {emptyBecauseSettledOnly
+                    ? "Fully settled rows are hidden. Turn on “Show settled items” in More, or adjust filters."
+                    : tagFilter
+                      ? "Clear the tag filter or pick another tag."
+                      : "Add one from the Add tab."}
                 </p>
-                <button
-                  type="button"
-                  onClick={() => (tagFilter ? setTagFilter(null) : setNav("add"))}
-                  className="mt-5 rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-md hover:bg-indigo-500"
-                >
-                  {tagFilter ? "Show all tags" : "Add entry"}
-                </button>
+                <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                  {emptyBecauseSettledOnly ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowSettledItems(true);
+                          try {
+                            localStorage.setItem(
+                              SHOW_SETTLED_STORAGE_KEY,
+                              "1",
+                            );
+                          } catch {
+                            /* ignore */
+                          }
+                        }}
+                        className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-md hover:bg-indigo-500"
+                      >
+                        Show settled items
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNav("more")}
+                        className="rounded-full border border-zinc-300 bg-white px-5 py-2 text-sm font-semibold text-zinc-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                      >
+                        More settings
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        tagFilter ? setTagFilter(null) : setNav("add")
+                      }
+                      className="rounded-full bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-md hover:bg-indigo-500"
+                    >
+                      {tagFilter ? "Show all tags" : "Add entry"}
+                    </button>
+                  )}
+                </div>
               </div>
             ) : (
               filtered.map((entry) => (
@@ -564,6 +667,56 @@ export function PayDashboard() {
 
           <div className="mb-6 space-y-4">
             <AuthBar />
+          </div>
+
+          <div className="mb-6 rounded-2xl border border-zinc-200/80 bg-white/80 p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/70">
+            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Ledger list
+            </p>
+            <div className="mt-3 flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                  Show settled items
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  When off, fully paid debts and fully received “expected in”
+                  amounts are hidden from the main list (not deleted).
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={showSettledItems}
+                aria-label="Show settled debts and expected-in items on the main list"
+                onClick={() => {
+                  setShowSettledItems((prev) => {
+                    const next = !prev;
+                    try {
+                      localStorage.setItem(
+                        SHOW_SETTLED_STORAGE_KEY,
+                        next ? "1" : "0",
+                      );
+                    } catch {
+                      /* ignore */
+                    }
+                    return next;
+                  });
+                }}
+                className={cn(
+                  "relative mt-0.5 h-7 w-12 shrink-0 rounded-full transition-colors focus-visible:outline focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950",
+                  showSettledItems
+                    ? "bg-indigo-600"
+                    : "bg-zinc-300 dark:bg-zinc-600",
+                )}
+              >
+                <span
+                  className={cn(
+                    "absolute left-0.5 top-0.5 size-6 rounded-full bg-white shadow transition-transform dark:bg-zinc-50",
+                    showSettledItems && "translate-x-[1.375rem]",
+                  )}
+                />
+              </button>
+            </div>
           </div>
 
           <div className="mb-6 rounded-2xl border border-zinc-200/80 bg-white/80 p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950/70">

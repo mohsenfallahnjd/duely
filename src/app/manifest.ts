@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "PayMay",
     short_name: "PayMay",
     description:
-      "Personal payment ledger — payments, debts, and pending balances with contacts and tags.",
+      "Personal payment ledger — payments, debts, and expected income with contacts and tags.",
     start_url: "/",
     scope: "/",
     display: "standalone",

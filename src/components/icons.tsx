@@ -6,6 +6,7 @@ export {
   Cloud,
   CloudOff,
   CreditCard,
+  Info,
   List,
   LoaderCircle,
   LogIn,

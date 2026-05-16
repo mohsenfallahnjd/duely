@@ -4,6 +4,7 @@ import type { Entry } from "@/lib/types";
 import { formatDatePersian } from "@/lib/format";
 import { TomanAmount } from "@/components/toman-icon";
 import { KIND_META } from "@/lib/constants";
+import { isEntryFullySettled } from "@/lib/entry-helpers";
 import { cn } from "@/lib/cn";
 import { ProgressTrack } from "@/components/progress-track";
 import { CreditCard, Tag, Trash2 } from "@/components/icons";
@@ -43,6 +44,7 @@ export function EntryCard({
   onTagClick,
 }: Props) {
   const remaining = Math.max(0, entry.amount - entry.progressAmount);
+  const settled = isEntryFullySettled(entry);
   const variant =
     entry.kind === "payment"
       ? "payment"
@@ -74,6 +76,11 @@ export function EntryCard({
             >
               {KIND_META[entry.kind].label}
             </span>
+            {settled && (
+              <span className="rounded-full bg-zinc-200/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                Settled
+              </span>
+            )}
             <span className="text-xs text-zinc-500 dark:text-zinc-400">
               {formatDatePersian(entry.date)}
             </span>
@@ -85,7 +92,7 @@ export function EntryCard({
         <button
           type="button"
           onClick={() => onDelete(entry.id)}
-          className="rounded-lg p-2 text-zinc-400 opacity-0 transition-all hover:bg-zinc-100 hover:text-red-600 group-hover:opacity-100 dark:hover:bg-zinc-900 dark:hover:text-red-400"
+          className="rounded-lg p-2 text-zinc-500 opacity-100 transition-all hover:bg-zinc-100 hover:text-red-600 sm:opacity-0 sm:group-hover:opacity-100 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-red-400"
           aria-label="Delete entry"
         >
           <Trash2 className="size-4" />

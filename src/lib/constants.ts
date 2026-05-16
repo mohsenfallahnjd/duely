@@ -2,6 +2,9 @@ import type { EntryKind } from "./types";
 
 export const STORAGE_KEY = "pay-may-state-v1";
 
+/** Persist “show fully settled debt & expected-in rows on main list” (local UI preference). */
+export const SHOW_SETTLED_STORAGE_KEY = "pay-may-show-settled-v1";
+
 export const POPULAR_TAGS = [
   "Food",
   "Transport",
@@ -43,8 +46,8 @@ export const KIND_META: Record<
     hint: "Amount you owe — track payoff progress.",
   },
   pending: {
-    label: "Pending",
-    short: "Due",
-    hint: "Money expected or not yet settled.",
+    label: "Expected in",
+    short: "In",
+    hint: "Money you expect to receive — mark settled when it’s fully received.",
   },
 };

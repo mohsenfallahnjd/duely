@@ -25,8 +25,8 @@ export const metadata: Metadata = {
 		default: "PayMay",
 		template: "%s · PayMay",
 	},
-	description:
-		"Track daily payments, debts, and pending money with contacts and tags.",
+		description:
+			"Track daily payments, debts, and money you expect to receive — with contacts and tags.",
 	appleWebApp: {
 		capable: true,
 		title: "PayMay",
