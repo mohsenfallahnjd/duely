@@ -1,7 +1,10 @@
 /** Curated icons — import from here for consistency (`@/components/icons`). */
 export {
+  ArrowDownRight,
   ArrowRight,
+  ArrowUpRight,
   Calendar,
+  Check,
   ChevronDown,
   Cloud,
   CloudOff,

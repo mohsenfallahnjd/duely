@@ -34,7 +34,10 @@ import {
 } from "@/lib/device-contacts";
 import { parseVCardContent } from "@/lib/vcard-import";
 import {
+  ArrowDownRight,
+  ArrowUpRight,
   Calendar,
+  CreditCard,
   Info,
   List,
   LoaderCircle,
@@ -268,7 +271,13 @@ export function PayDashboard() {
             </p>
           </header>
 
-          <section className="mb-6 grid gap-2 sm:grid-cols-3">
+          <MobileLedgerTotals
+            payments={totals.payments}
+            debtLeft={totals.debtOutstanding}
+            expectedLeft={totals.pendingOutstanding}
+          />
+
+          <section className="mb-4 hidden gap-3 sm:mb-6 sm:grid sm:grid-cols-3">
             <SummaryCard
               label="Payments"
               value={totals.payments}
@@ -952,6 +961,87 @@ export function PayDashboard() {
         </div>
       </nav>
     </div>
+  );
+}
+
+function MobileLedgerTotals({
+  payments,
+  debtLeft,
+  expectedLeft,
+}: {
+  payments: number;
+  debtLeft: number;
+  expectedLeft: number;
+}) {
+  return (
+    <section
+      className="mb-4 sm:hidden"
+      aria-label="Ledger totals"
+    >
+      <div
+        className={cn(
+          "overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-sm",
+          "dark:border-zinc-800/90 dark:bg-zinc-950/90 dark:shadow-none",
+        )}
+      >
+        <div className="grid grid-cols-3 divide-x divide-zinc-100 dark:divide-zinc-800">
+          <div className="flex min-h-0 flex-col items-center gap-1 px-1.5 py-3 text-center">
+            <span
+              className={cn(
+                "flex size-8 items-center justify-center rounded-xl",
+                "bg-indigo-100 text-indigo-700",
+                "dark:bg-indigo-500/20 dark:text-indigo-200",
+              )}
+            >
+              <ArrowDownRight className="size-4" strokeWidth={2.25} aria-hidden />
+            </span>
+            <span className="max-w-[5.5rem] text-[9px] font-semibold uppercase leading-tight tracking-wide text-zinc-500 dark:text-zinc-400">
+              Spend
+            </span>
+            <TomanAmount
+              value={payments}
+              className="max-w-full min-w-0 justify-center text-[0.8125rem] font-bold leading-tight tracking-tight text-zinc-900 dark:text-white [&_svg]:size-[0.85em]"
+            />
+          </div>
+          <div className="flex min-h-0 flex-col items-center gap-1 px-1.5 py-3 text-center">
+            <span
+              className={cn(
+                "flex size-8 items-center justify-center rounded-xl",
+                "bg-emerald-100 text-emerald-700",
+                "dark:bg-emerald-500/15 dark:text-emerald-300",
+              )}
+            >
+              <CreditCard className="size-4" strokeWidth={2.25} aria-hidden />
+            </span>
+            <span className="max-w-[5.5rem] text-[9px] font-semibold uppercase leading-tight tracking-wide text-zinc-500 dark:text-zinc-400">
+              Debt left
+            </span>
+            <TomanAmount
+              value={debtLeft}
+              className="max-w-full min-w-0 justify-center text-[0.8125rem] font-bold leading-tight tracking-tight text-zinc-900 dark:text-white [&_svg]:size-[0.85em]"
+            />
+          </div>
+          <div className="flex min-h-0 flex-col items-center gap-1 px-1.5 py-3 text-center">
+            <span
+              className={cn(
+                "flex size-8 items-center justify-center rounded-xl",
+                "bg-amber-100 text-amber-800",
+                "dark:bg-amber-500/15 dark:text-amber-200",
+              )}
+            >
+              <ArrowUpRight className="size-4" strokeWidth={2.25} aria-hidden />
+            </span>
+            <span className="max-w-[5.5rem] text-[9px] font-semibold uppercase leading-tight tracking-wide text-zinc-500 dark:text-zinc-400">
+              Expected
+            </span>
+            <TomanAmount
+              value={expectedLeft}
+              className="max-w-full min-w-0 justify-center text-[0.8125rem] font-bold leading-tight tracking-tight text-zinc-900 dark:text-white [&_svg]:size-[0.85em]"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 

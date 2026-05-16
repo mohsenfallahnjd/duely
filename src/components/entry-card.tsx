@@ -7,7 +7,7 @@ import { KIND_META } from "@/lib/constants";
 import { isEntryFullySettled } from "@/lib/entry-helpers";
 import { cn } from "@/lib/cn";
 import { ProgressTrack } from "@/components/progress-track";
-import { CreditCard, Tag, Trash2 } from "@/components/icons";
+import { Check, CreditCard, Tag, Trash2 } from "@/components/icons";
 import type { Contact } from "@/lib/types";
 
 function initials(name: string) {
@@ -77,7 +77,8 @@ export function EntryCard({
               {KIND_META[entry.kind].label}
             </span>
             {settled && (
-              <span className="rounded-full bg-zinc-200/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-200">
+                <Check className="size-3 stroke-[2.5]" aria-hidden />
                 Settled
               </span>
             )}
@@ -166,6 +167,51 @@ export function EntryCard({
               </span>
             </div>
             <ProgressTrack percent={percent(entry)} variant={variant} />
+            {settled ? (
+              <div
+                className={cn(
+                  "flex items-center gap-2 rounded-xl border px-3 py-2.5",
+                  "border-emerald-200/80 bg-emerald-50/90 dark:border-emerald-900/50 dark:bg-emerald-950/40",
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex size-8 shrink-0 items-center justify-center rounded-full",
+                    "bg-emerald-600 text-white dark:bg-emerald-500",
+                  )}
+                >
+                  <Check className="size-4" strokeWidth={2.75} aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-emerald-950 dark:text-emerald-100">
+                    Fully settled
+                  </p>
+                  <p className="mt-0.5 text-[11px] leading-snug text-emerald-800/90 dark:text-emerald-300/90">
+                    {entry.kind === "debt"
+                      ? "Marked as paid off. Adjust the slider below if you need to change it."
+                      : "Marked as fully received. Adjust the slider below if you need to change it."}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() =>
+                  void onProgressChange(entry.id, entry.amount)
+                }
+                className={cn(
+                  "flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition",
+                  "border border-emerald-200 bg-emerald-50 text-emerald-900 shadow-sm",
+                  "hover:border-emerald-300 hover:bg-emerald-100/90 active:scale-[0.99]",
+                  "dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-100 dark:hover:bg-emerald-950/70",
+                )}
+              >
+                <Check className="size-4 shrink-0" strokeWidth={2.25} aria-hidden />
+                {entry.kind === "debt"
+                  ? "Mark paid off"
+                  : "Mark fully received"}
+              </button>
+            )}
           </>
         )}
         {entry.kind !== "payment" && (
