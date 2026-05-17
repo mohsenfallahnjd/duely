@@ -19,6 +19,7 @@ import {
   apiFetchLedger,
   apiRemoveContact,
   apiRemoveEntry,
+  apiUpdateEntry,
   apiUpdateEntryProgress,
 } from "@/lib/ledger-api-client";
 import {
@@ -32,8 +33,10 @@ import {
 import type { OutboxOp } from "@/lib/outbox-types";
 import {
   flushOutboxClient,
+  patchPendingEntryAddInOutbox,
   pruneOutboxForDeletedLocalContact,
   pruneOutboxForDeletedLocalEntry,
+  queueEntryFullUpdateOutbox,
 } from "@/lib/outbox";
 import type { Contact, Entry, EntryKind, PayState } from "@/lib/types";
 import {
@@ -88,6 +91,19 @@ type LedgerContextValue = {
     date: string;
     note: string;
   }) => Promise<void>;
+  updateEntry: (
+    id: string,
+    input: {
+      kind: EntryKind;
+      title: string;
+      amount: number;
+      progressAmount: number;
+      contactId: string | null;
+      tags: string[];
+      date: string;
+      note: string;
+    },
+  ) => Promise<void>;
   updateEntryProgress: (id: string, progressAmount: number) => Promise<void>;
   removeEntry: (id: string) => Promise<void>;
   totals: {
@@ -604,6 +620,124 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
     [cloudActive, userId],
   );
 
+  const updateEntry = useCallback(
+    async (
+      id: string,
+      input: {
+        kind: EntryKind;
+        title: string;
+        amount: number;
+        progressAmount: number;
+        contactId: string | null;
+        tags: string[];
+        date: string;
+        note: string;
+      },
+    ) => {
+      const title = input.title.trim() || "Untitled";
+      const paid =
+        input.kind === "payment"
+          ? input.amount
+          : Math.max(
+              0,
+              Math.min(
+                input.amount,
+                Number.isFinite(input.progressAmount)
+                  ? input.progressAmount
+                  : 0,
+              ),
+            );
+      const note = input.note.trim();
+      const tags = [
+        ...new Set(input.tags.map((t) => t.trim()).filter(Boolean)),
+      ];
+      const dateIso = input.date;
+      const amount = Math.max(0, input.amount);
+
+      const mapEntry = (e: Entry): Entry =>
+        e.id === id
+          ? {
+              ...e,
+              kind: input.kind,
+              title,
+              amount,
+              progressAmount: paid,
+              contactId: input.contactId,
+              tags,
+              date: dateIso,
+              note,
+            }
+          : e;
+
+      setState((s) => ({
+        ...s,
+        entries: s.entries.map(mapEntry),
+      }));
+
+      if (!cloudActive || !userId) return;
+
+      const onServer = serverIdsRef.current.entries.has(id);
+      const payload = {
+        entryKind: input.kind,
+        title,
+        amount,
+        progressAmount: paid,
+        contactLocalId: input.contactId,
+        tags,
+        dateIso,
+        note,
+      };
+
+      if (!onServer) {
+        const patched = patchPendingEntryAddInOutbox(userId, id, payload);
+        if (!patched) {
+          queueEntryFullUpdateOutbox(userId, {
+            v: 1,
+            kind: "entry.update",
+            entryId: id,
+            ...payload,
+          });
+        }
+        setPendingOutboxCount(loadOutbox(userId).length);
+        return;
+      }
+
+      if (navigator.onLine) {
+        try {
+          await apiUpdateEntry({
+            id,
+            kind: input.kind,
+            title,
+            amount,
+            progressAmount: paid,
+            contactId: input.contactId,
+            tags,
+            dateIso,
+            note,
+          });
+        } catch (e) {
+          console.error(e);
+          queueEntryFullUpdateOutbox(userId, {
+            v: 1,
+            kind: "entry.update",
+            entryId: id,
+            ...payload,
+          });
+          setPendingOutboxCount(loadOutbox(userId).length);
+        }
+      } else {
+        queueEntryFullUpdateOutbox(userId, {
+          v: 1,
+          kind: "entry.update",
+          entryId: id,
+          ...payload,
+        });
+        setPendingOutboxCount(loadOutbox(userId).length);
+      }
+    },
+    [cloudActive, userId],
+  );
+
   const updateEntryProgress = useCallback(
     async (id: string, progressAmount: number) => {
       let nextVal = 0;
@@ -704,6 +838,7 @@ export function PayLedgerProvider({ children }: { children: React.ReactNode }) {
     addContact,
     removeContact,
     addEntry,
+    updateEntry,
     updateEntryProgress,
     removeEntry,
     totals,

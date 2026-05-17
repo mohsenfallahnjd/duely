@@ -131,6 +131,38 @@ export async function updateEntryProgress(
     .where(and(eq(entries.id, entryId), eq(entries.userId, userId)));
 }
 
+/** Replace editable fields on an entry (not the row id / user / createdAt). */
+export async function updateEntryForUser(
+  userId: string,
+  entryId: string,
+  input: {
+    kind: EntryKind;
+    title: string;
+    amount: number;
+    progressAmount: number;
+    contactId: string | null;
+    tags: string[];
+    dateIso: string;
+    note: string;
+  },
+) {
+  const db = requireDb();
+  const entryDate = input.dateIso.slice(0, 10);
+  await db
+    .update(entries)
+    .set({
+      kind: input.kind,
+      title: input.title,
+      amount: input.amount,
+      progressAmount: input.progressAmount,
+      contactId: input.contactId,
+      tags: input.tags,
+      entryDate,
+      note: input.note,
+    })
+    .where(and(eq(entries.id, entryId), eq(entries.userId, userId)));
+}
+
 export async function deleteEntry(userId: string, entryId: string) {
   const db = requireDb();
   await db
@@ -181,6 +213,23 @@ export async function applyOutboxOps(
       case "entry.progress": {
         const id = idMap.get(op.entryId) ?? op.entryId;
         await updateEntryProgress(userId, id, op.progressAmount);
+        break;
+      }
+      case "entry.update": {
+        const id = idMap.get(op.entryId) ?? op.entryId;
+        const contactId = op.contactLocalId
+          ? (idMap.get(op.contactLocalId) ?? op.contactLocalId)
+          : null;
+        await updateEntryForUser(userId, id, {
+          kind: op.entryKind,
+          title: op.title,
+          amount: op.amount,
+          progressAmount: op.progressAmount,
+          contactId,
+          tags: op.tags,
+          dateIso: op.dateIso,
+          note: op.note,
+        });
         break;
       }
       case "entry.remove": {

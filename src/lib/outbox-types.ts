@@ -26,4 +26,17 @@ export type OutboxOp =
       createdAt: string;
     }
   | { v: 1; kind: "entry.progress"; entryId: string; progressAmount: number }
+  | {
+      v: 1;
+      kind: "entry.update";
+      entryId: string;
+      entryKind: EntryKind;
+      title: string;
+      amount: number;
+      progressAmount: number;
+      contactLocalId: string | null;
+      tags: string[];
+      dateIso: string;
+      note: string;
+    }
   | { v: 1; kind: "entry.remove"; entryId: string };

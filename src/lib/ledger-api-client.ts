@@ -136,6 +136,48 @@ export async function apiUpdateEntryProgress(
   }
 }
 
+export async function apiUpdateEntry(input: {
+  id: string;
+  kind: EntryKind;
+  title: string;
+  amount: number;
+  progressAmount: number;
+  contactId: string | null;
+  tags: string[];
+  dateIso: string;
+  note: string;
+}): Promise<void> {
+  const res = await fetch(
+    `/api/ledger/entries/${encodeURIComponent(input.id)}`,
+    {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kind: input.kind,
+        title: input.title,
+        amount: input.amount,
+        progressAmount: input.progressAmount,
+        contactId: input.contactId,
+        tags: input.tags,
+        dateIso: input.dateIso,
+        note: input.note,
+      }),
+    },
+  );
+  if (!res.ok) {
+    const json: unknown = await res.json().catch(() => ({}));
+    const err =
+      typeof json === "object" &&
+      json !== null &&
+      "error" in json &&
+      typeof (json as { error: unknown }).error === "string"
+        ? (json as { error: string }).error
+        : res.statusText;
+    throw new Error(err);
+  }
+}
+
 export async function apiRemoveEntry(id: string): Promise<void> {
   const res = await fetch(`/api/ledger/entries/${encodeURIComponent(id)}`, {
     method: "DELETE",

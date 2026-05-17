@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { AuthBar } from "@/components/auth-bar";
+import { Link } from "@/components/link";
 import { usePayLedger } from "@/components/pay-ledger-provider";
 import { SyncStatusBanner } from "@/components/sync-status-banner";
 import {
@@ -16,9 +17,12 @@ import {
   POPULAR_TAGS,
   SHOW_SETTLED_STORAGE_KEY,
 } from "@/lib/constants";
-import { computeBullshitSpendReport } from "@/lib/bullshit-spend";
+import {
+  computeBullshitSpendReport,
+  type BullshitSpendReport,
+} from "@/lib/bullshit-spend";
 import { isEntryFullySettled } from "@/lib/entry-helpers";
-import type { EntryKind } from "@/lib/types";
+import type { EntryKind, Entry } from "@/lib/types";
 import { TomanAmount } from "@/components/toman-icon";
 import {
   collectAllTags,
@@ -37,6 +41,7 @@ import {
 import { parseVCardContent } from "@/lib/vcard-import";
 import {
   ArrowDownRight,
+  ArrowRight,
   ArrowUpRight,
   Calendar,
   CreditCard,
@@ -75,6 +80,7 @@ export function PayDashboard() {
     updateEntryProgress,
     removeEntry,
     totals,
+    updateEntry,
   } = usePayLedger();
 
   const [nav, setNav] = useState<NavTab>("list");
@@ -103,7 +109,42 @@ export function PayDashboard() {
   const [note, setNote] = useState("");
   const [pickedTags, setPickedTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState("");
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [showSettledItems, setShowSettledItems] = useState(false);
+
+  function cancelEditAndReset() {
+    setEditingEntryId(null);
+    setKind("payment");
+    setTitle("");
+    setAmount("");
+    setProgressAmount("");
+    setContactId("");
+    setDate(new Date().toISOString());
+    setNote("");
+    setPickedTags([]);
+    setCustomTag("");
+    setNav("list");
+  }
+
+  function beginEdit(entry: Entry) {
+    setEditingEntryId(entry.id);
+    setKind(entry.kind);
+    setTitle(entry.title);
+    setAmount(formatAmountInputFromRaw(String(entry.amount)));
+    if (entry.kind === "payment") {
+      setProgressAmount("");
+    } else {
+      setProgressAmount(
+        formatAmountInputFromRaw(String(entry.progressAmount)),
+      );
+    }
+    setContactId(entry.contactId ?? "");
+    setDate(entry.date);
+    setNote(entry.note);
+    setPickedTags([...entry.tags]);
+    setCustomTag("");
+    setNav("add");
+  }
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -186,7 +227,7 @@ export function PayDashboard() {
         ? amt
         : Math.max(0, parseAmountInputToNumber(progressAmount) || 0);
     try {
-      await addEntry({
+      const payload = {
         kind,
         title,
         amount: amt,
@@ -195,11 +236,17 @@ export function PayDashboard() {
         tags: pickedTags,
         date: new Date(date).toISOString(),
         note,
-      });
+      };
+      if (editingEntryId) {
+        await updateEntry(editingEntryId, payload);
+      } else {
+        await addEntry(payload);
+      }
     } catch (err) {
       console.error(err);
       return;
     }
+    setEditingEntryId(null);
     setTitle("");
     setAmount("");
     setProgressAmount("");
@@ -230,6 +277,20 @@ export function PayDashboard() {
       {nav === "list" && (
         <>
           <SyncStatusBanner />
+          <div className="-mt-0.5 mb-3">
+            <Link
+              href="/bullshit"
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border border-rose-200/75 bg-rose-50/70 px-2.5 py-1",
+                "text-[10px] font-semibold uppercase tracking-wide text-rose-900 shadow-sm transition",
+                "hover:border-rose-300 hover:bg-rose-100/80 active:scale-[0.98]",
+                "dark:border-rose-900/55 dark:bg-rose-950/45 dark:text-rose-100 dark:hover:bg-rose-950/65",
+              )}
+            >
+              <Sparkles className="size-3 shrink-0 text-rose-600 dark:text-rose-400" aria-hidden />
+              Bullshit HQ
+            </Link>
+          </div>
           <header className="mb-4 sm:mb-6">
             <div className="flex items-start justify-between gap-3 sm:block">
               <div className="min-w-0">
@@ -306,109 +367,6 @@ export function PayDashboard() {
               className="border-amber-200/60 bg-gradient-to-br from-amber-50/90 to-white dark:border-amber-900/50 dark:from-amber-950/40 dark:to-zinc-950"
               icon={<Wallet className="size-4 text-amber-600 dark:text-amber-400" />}
             />
-          </section>
-
-          <section
-            className={cn(
-              "mb-4 rounded-2xl border border-rose-200/75 bg-gradient-to-br from-rose-50/85 via-white to-white p-4 shadow-sm",
-              "dark:border-rose-900/45 dark:from-rose-950/35 dark:via-zinc-950 dark:to-zinc-950/90",
-            )}
-          >
-            <div className="flex gap-3">
-              <span
-                className={cn(
-                  "flex size-9 shrink-0 items-center justify-center rounded-xl",
-                  "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
-                )}
-              >
-                <Sparkles className="size-4" strokeWidth={2} aria-hidden />
-              </span>
-              <div className="min-w-0 flex-1">
-                <h2 className="text-xs font-semibold uppercase tracking-wide text-rose-900 dark:text-rose-100">
-                  Unnecessary spend
-                </h2>
-                <p className="mt-1 text-[11px] leading-relaxed text-rose-900/80 dark:text-rose-200/85">
-                  Tag payments with{" "}
-                  <strong className="font-semibold text-rose-950 dark:text-rose-50">
-                    {BULLSHIT_TAG_LABEL}
-                  </strong>{" "}
-                  (also &quot;boolshit&quot; or &quot;BS&quot;). Below: what you
-                  spent on impulse / regret buys — that&apos;s what you{" "}
-                  <strong className="font-semibold">could have kept</strong> if
-                  you hadn&apos;t paid.
-                </p>
-                <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
-                  <div
-                    className={cn(
-                      "rounded-xl border border-rose-200/55 bg-white/85 px-3 py-2.5",
-                      "dark:border-rose-900/40 dark:bg-zinc-950/60",
-                    )}
-                  >
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-rose-700/90 dark:text-rose-300/90">
-                      Today
-                    </p>
-                    <p className="mt-1 text-[11px] text-zinc-600 dark:text-zinc-400">
-                      Unnecessary spend
-                    </p>
-                    <p className="mt-0.5 text-sm font-bold tabular-nums text-zinc-900 dark:text-white">
-                      <TomanAmount
-                        value={bullshitSpendReport.today.total}
-                        className="text-sm font-bold"
-                      />
-                    </p>
-                    <p className="mt-2 border-t border-rose-100 pt-2 text-[11px] text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
-                      Could have kept
-                    </p>
-                    <p className="mt-0.5 text-sm font-bold tabular-nums text-emerald-700 dark:text-emerald-400">
-                      <TomanAmount
-                        value={bullshitSpendReport.today.total}
-                        className="text-sm font-bold text-emerald-700 dark:text-emerald-400"
-                      />
-                    </p>
-                    <p className="mt-1.5 text-[10px] text-zinc-500 dark:text-zinc-500">
-                      {bullshitSpendReport.paymentCountToday} payment
-                      {bullshitSpendReport.paymentCountToday === 1
-                        ? ""
-                        : "s"}{" "}
-                      tagged
-                    </p>
-                  </div>
-                  <div
-                    className={cn(
-                      "rounded-xl border border-rose-200/55 bg-white/85 px-3 py-2.5",
-                      "dark:border-rose-900/40 dark:bg-zinc-950/60",
-                    )}
-                  >
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-rose-700/90 dark:text-rose-300/90">
-                      Last 7 days
-                    </p>
-                    <p className="mt-1 text-[11px] text-zinc-600 dark:text-zinc-400">
-                      Unnecessary spend
-                    </p>
-                    <p className="mt-0.5 text-sm font-bold tabular-nums text-zinc-900 dark:text-white">
-                      <TomanAmount
-                        value={bullshitSpendReport.last7Days.total}
-                        className="text-sm font-bold"
-                      />
-                    </p>
-                    <p className="mt-2 border-t border-rose-100 pt-2 text-[11px] text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
-                      Could have kept
-                    </p>
-                    <p className="mt-0.5 text-sm font-bold tabular-nums text-emerald-700 dark:text-emerald-400">
-                      <TomanAmount
-                        value={bullshitSpendReport.last7Days.total}
-                        className="text-sm font-bold text-emerald-700 dark:text-emerald-400"
-                      />
-                    </p>
-                    <p className="mt-1.5 text-[10px] text-zinc-500 dark:text-zinc-500">
-                      {bullshitSpendReport.paymentCountWeek} payment
-                      {bullshitSpendReport.paymentCountWeek === 1 ? "" : "s"}{" "}
-                      tagged
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
           </section>
 
           <div className="mb-5 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -559,6 +517,7 @@ export function PayDashboard() {
                       ? contactsById.get(entry.contactId)
                       : undefined
                   }
+                  onEdit={beginEdit}
                   onDelete={(id) => void removeEntry(id)}
                   onProgressChange={updateEntryProgress}
                   activeTag={tagFilter}
@@ -579,12 +538,27 @@ export function PayDashboard() {
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-600 dark:text-indigo-400">
               PayMay
             </p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">
-              Add entry
-            </h1>
-            <p className="mt-1 text-sm text-zinc-500">
-              Choose type, amount, Jalali date, and optional contact.
-            </p>
+            <div className="mt-1 flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">
+                  {editingEntryId ? "Edit entry" : "Add entry"}
+                </h1>
+                <p className="mt-1 text-sm text-zinc-500">
+                  {editingEntryId
+                    ? "Update amounts, type, date, tags, or contact — then save."
+                    : "Choose type, amount, Jalali date, and optional contact."}
+                </p>
+              </div>
+              {editingEntryId && (
+                <button
+                  type="button"
+                  onClick={() => cancelEditAndReset()}
+                  className="shrink-0 rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-900"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
           </header>
 
           <form
@@ -730,23 +704,61 @@ export function PayDashboard() {
                   ),
                 )}
               </div>
-              <p className="mt-3 text-[11px] font-medium text-rose-800 dark:text-rose-200/90">
-                Unnecessary / impulse
-              </p>
-              <div className="mt-1.5 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => toggleTag(BULLSHIT_TAG_LABEL)}
+              <button
+                type="button"
+                onClick={() => toggleTag(BULLSHIT_TAG_LABEL)}
+                className={cn(
+                  "mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-3 text-left text-sm font-bold transition active:scale-[0.99]",
+                  "motion-safe:hover:-translate-y-px",
+                  pickedTags.includes(BULLSHIT_TAG_LABEL)
+                    ? "border-rose-500 bg-rose-600 text-white shadow-md dark:border-rose-400"
+                    : "border-rose-300 bg-gradient-to-br from-rose-50 via-white to-amber-50/80 text-rose-950 shadow-sm hover:border-rose-400 dark:border-rose-800 dark:from-rose-950/50 dark:via-zinc-950 dark:to-amber-950/25 dark:text-rose-50",
+                )}
+              >
+                <span
                   className={cn(
-                    "rounded-full border px-3 py-1 text-xs font-semibold transition",
+                    "flex size-9 shrink-0 items-center justify-center rounded-xl",
                     pickedTags.includes(BULLSHIT_TAG_LABEL)
-                      ? "border-rose-600 bg-rose-600 text-white shadow-sm dark:border-rose-500 dark:bg-rose-600"
-                      : "border-rose-200 bg-rose-50/90 text-rose-900 hover:border-rose-300 dark:border-rose-900/60 dark:bg-rose-950/50 dark:text-rose-100 dark:hover:border-rose-800",
+                      ? "bg-white/20"
+                      : "bg-rose-100 dark:bg-rose-500/20",
                   )}
+                  aria-hidden
                 >
-                  {BULLSHIT_TAG_LABEL}
-                </button>
-              </div>
+                  <Sparkles
+                    className={cn(
+                      "size-5",
+                      pickedTags.includes(BULLSHIT_TAG_LABEL)
+                        ? "text-white"
+                        : "text-rose-600 dark:text-rose-300",
+                    )}
+                    strokeWidth={2}
+                  />
+                </span>
+                <span className="min-w-0 flex-1 leading-snug">
+                  {pickedTags.includes(BULLSHIT_TAG_LABEL) ? (
+                    <>
+                      <span className="block">Regret spend tagged — tap to undo</span>
+                      <span className="mt-0.5 block text-xs font-medium opacity-90">
+                        Tap to remove the {BULLSHIT_TAG_LABEL} label
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="block">Honest mode: this one&apos;s bullshit</span>
+                      <span className="mt-0.5 block text-xs font-medium opacity-90">
+                        Adds “{BULLSHIT_TAG_LABEL}” for impulse buys —{" "}
+                        <Link
+                          href="/bullshit"
+                          className="font-semibold text-indigo-600 underline decoration-indigo-400/70 underline-offset-2 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+                        >
+                          charts &amp; roast
+                        </Link>{" "}
+                        on Bullshit HQ.
+                      </span>
+                    </>
+                  )}
+                </span>
+              </button>
               <div className="mt-3 flex gap-2">
                 <input
                   value={customTag}
@@ -784,7 +796,7 @@ export function PayDashboard() {
               type="submit"
               className="w-full rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 py-3.5 text-sm font-semibold text-white shadow-lg transition hover:brightness-110 active:scale-[0.99]"
             >
-              Save to ledger
+              {editingEntryId ? "Save changes" : "Save to ledger"}
             </button>
           </form>
         </>
@@ -800,9 +812,20 @@ export function PayDashboard() {
               More
             </h1>
             <p className="mt-1 text-sm text-zinc-500">
-              Account, contacts, sync, and appearance.
+              Account,{" "}
+              <Link
+                href="/bullshit"
+                className="font-medium text-indigo-600 underline decoration-indigo-300/60 underline-offset-2 hover:text-indigo-500 dark:text-indigo-400"
+              >
+                Bullshit HQ
+              </Link>
+              , contacts, sync, and appearance.
             </p>
           </header>
+
+          <div id="impulse-spend-report" className="mb-6 scroll-mt-4">
+            <UnnecessarySpendReportCard report={bullshitSpendReport} />
+          </div>
 
           <div className="mb-6 space-y-4">
             <AuthBar />
@@ -1091,6 +1114,123 @@ export function PayDashboard() {
         </div>
       </nav>
     </div>
+  );
+}
+
+function UnnecessarySpendReportCard({ report }: { report: BullshitSpendReport }) {
+  return (
+    <section
+      className={cn(
+        "rounded-2xl border border-rose-200/75 bg-gradient-to-br from-rose-50/85 via-white to-white p-4 shadow-sm",
+        "dark:border-rose-900/45 dark:from-rose-950/35 dark:via-zinc-950 dark:to-zinc-950/90",
+      )}
+      aria-labelledby="impulse-report-heading"
+    >
+      <div className="flex gap-3">
+        <span
+          className={cn(
+            "flex size-9 shrink-0 items-center justify-center rounded-xl",
+            "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+          )}
+        >
+          <Sparkles className="size-4" strokeWidth={2} aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2
+            id="impulse-report-heading"
+            className="text-xs font-semibold uppercase tracking-wide text-rose-900 dark:text-rose-100"
+          >
+            Impulse &amp; unnecessary spend
+          </h2>
+          <p className="mt-1 text-[11px] leading-relaxed text-rose-900/80 dark:text-rose-200/85">
+            Payments tagged{" "}
+            <strong className="font-semibold text-rose-950 dark:text-rose-50">
+              {BULLSHIT_TAG_LABEL}
+            </strong>{" "}
+            (also &quot;boolshit&quot; or &quot;BS&quot;). These totals are what
+            you{" "}
+            <strong className="font-semibold">could have kept</strong> if you
+            had skipped the buy.
+          </p>
+          <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+            <div
+              className={cn(
+                "rounded-xl border border-rose-200/55 bg-white/85 px-3 py-2.5",
+                "dark:border-rose-900/40 dark:bg-zinc-950/60",
+              )}
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-rose-700/90 dark:text-rose-300/90">
+                Today
+              </p>
+              <p className="mt-1 text-[11px] text-zinc-600 dark:text-zinc-400">
+                Unnecessary spend
+              </p>
+              <p className="mt-0.5 text-sm font-bold tabular-nums text-zinc-900 dark:text-white">
+                <TomanAmount
+                  value={report.today.total}
+                  className="text-sm font-bold"
+                />
+              </p>
+              <p className="mt-2 border-t border-rose-100 pt-2 text-[11px] text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+                Could have kept
+              </p>
+              <p className="mt-0.5 text-sm font-bold tabular-nums text-emerald-700 dark:text-emerald-400">
+                <TomanAmount
+                  value={report.today.total}
+                  className="text-sm font-bold text-emerald-700 dark:text-emerald-400"
+                />
+              </p>
+              <p className="mt-1.5 text-[10px] text-zinc-500 dark:text-zinc-500">
+                {report.paymentCountToday} payment
+                {report.paymentCountToday === 1 ? "" : "s"} tagged
+              </p>
+            </div>
+            <div
+              className={cn(
+                "rounded-xl border border-rose-200/55 bg-white/85 px-3 py-2.5",
+                "dark:border-rose-900/40 dark:bg-zinc-950/60",
+              )}
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-rose-700/90 dark:text-rose-300/90">
+                Last 7 days
+              </p>
+              <p className="mt-1 text-[11px] text-zinc-600 dark:text-zinc-400">
+                Unnecessary spend
+              </p>
+              <p className="mt-0.5 text-sm font-bold tabular-nums text-zinc-900 dark:text-white">
+                <TomanAmount
+                  value={report.last7Days.total}
+                  className="text-sm font-bold"
+                />
+              </p>
+              <p className="mt-2 border-t border-rose-100 pt-2 text-[11px] text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+                Could have kept
+              </p>
+              <p className="mt-0.5 text-sm font-bold tabular-nums text-emerald-700 dark:text-emerald-400">
+                <TomanAmount
+                  value={report.last7Days.total}
+                  className="text-sm font-bold text-emerald-700 dark:text-emerald-400"
+                />
+              </p>
+              <p className="mt-1.5 text-[10px] text-zinc-500 dark:text-zinc-500">
+                {report.paymentCountWeek} payment
+                {report.paymentCountWeek === 1 ? "" : "s"} tagged
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/bullshit"
+            className={cn(
+              "mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-rose-200/70 py-2.5 text-xs font-semibold text-rose-900 transition",
+              "hover:border-rose-300 hover:bg-rose-100/50 dark:border-rose-800/60 dark:text-rose-100 dark:hover:bg-rose-950/50",
+            )}
+          >
+            Open full charts &amp; fun facts
+            <ArrowRight className="size-3.5 shrink-0" aria-hidden />
+          </Link>
+        </div>
+      </div>
+    </section>
   );
 }
 

@@ -7,7 +7,7 @@ import { KIND_META } from "@/lib/constants";
 import { isEntryFullySettled } from "@/lib/entry-helpers";
 import { cn } from "@/lib/cn";
 import { ProgressTrack } from "@/components/progress-track";
-import { Check, CreditCard, Tag, Trash2 } from "@/components/icons";
+import { Check, CreditCard, Pencil, Tag, Trash2 } from "@/components/icons";
 import type { Contact } from "@/lib/types";
 
 function initials(name: string) {
@@ -28,6 +28,7 @@ function percent(entry: Entry) {
 type Props = {
   entry: Entry;
   contact: Contact | undefined;
+  onEdit?: (entry: Entry) => void;
   onDelete: (id: string) => void | Promise<void>;
   onProgressChange: (id: string, value: number) => void | Promise<void>;
   /** When set, that tag chip is highlighted; chips are buttons if handler provided. */
@@ -38,6 +39,7 @@ type Props = {
 export function EntryCard({
   entry,
   contact,
+  onEdit,
   onDelete,
   onProgressChange,
   activeTag,
@@ -90,14 +92,26 @@ export function EntryCard({
             {entry.title}
           </h3>
         </div>
-        <button
-          type="button"
-          onClick={() => onDelete(entry.id)}
-          className="rounded-lg p-2 text-zinc-500 opacity-100 transition-all hover:bg-zinc-100 hover:text-red-600 sm:opacity-0 sm:group-hover:opacity-100 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-red-400"
-          aria-label="Delete entry"
-        >
-          <Trash2 className="size-4" />
-        </button>
+        <div className="flex shrink-0 items-start gap-0.5">
+          {onEdit && (
+            <button
+              type="button"
+              onClick={() => onEdit(entry)}
+              className="rounded-lg p-2 text-zinc-500 opacity-100 transition-all hover:bg-zinc-100 hover:text-indigo-600 sm:opacity-0 sm:group-hover:opacity-100 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-indigo-400"
+              aria-label="Edit entry"
+            >
+              <Pencil className="size-4" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => onDelete(entry.id)}
+            className="rounded-lg p-2 text-zinc-500 opacity-100 transition-all hover:bg-zinc-100 hover:text-red-600 sm:opacity-0 sm:group-hover:opacity-100 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-red-400"
+            aria-label="Delete entry"
+          >
+            <Trash2 className="size-4" />
+          </button>
+        </div>
       </div>
 
       <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
