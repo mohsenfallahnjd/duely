@@ -12,9 +12,11 @@ import { usePayLedger } from "@/components/pay-ledger-provider";
 import { SyncStatusBanner } from "@/components/sync-status-banner";
 import {
   KIND_META,
+  BULLSHIT_TAG_LABEL,
   POPULAR_TAGS,
   SHOW_SETTLED_STORAGE_KEY,
 } from "@/lib/constants";
+import { computeBullshitSpendReport } from "@/lib/bullshit-spend";
 import { isEntryFullySettled } from "@/lib/entry-helpers";
 import type { EntryKind } from "@/lib/types";
 import { TomanAmount } from "@/components/toman-icon";
@@ -44,6 +46,7 @@ import {
   MoreHorizontal,
   PlusCircle,
   Smartphone,
+  Sparkles,
   Tag,
   Upload,
   Wallet,
@@ -149,6 +152,11 @@ export function PayDashboard() {
 
   const activeTagSpend = tagFilter ? tagPaymentByTag.get(tagFilter) ?? 0 : 0;
   const activeTagPercent = tagSpendPercent(totalPayments, activeTagSpend);
+
+  const bullshitSpendReport = useMemo(
+    () => computeBullshitSpendReport(state.entries),
+    [state.entries],
+  );
 
   const amountVerbal = useMemo(() => {
     const n = parseAmountInputToNumber(amount);
@@ -298,6 +306,109 @@ export function PayDashboard() {
               className="border-amber-200/60 bg-gradient-to-br from-amber-50/90 to-white dark:border-amber-900/50 dark:from-amber-950/40 dark:to-zinc-950"
               icon={<Wallet className="size-4 text-amber-600 dark:text-amber-400" />}
             />
+          </section>
+
+          <section
+            className={cn(
+              "mb-4 rounded-2xl border border-rose-200/75 bg-gradient-to-br from-rose-50/85 via-white to-white p-4 shadow-sm",
+              "dark:border-rose-900/45 dark:from-rose-950/35 dark:via-zinc-950 dark:to-zinc-950/90",
+            )}
+          >
+            <div className="flex gap-3">
+              <span
+                className={cn(
+                  "flex size-9 shrink-0 items-center justify-center rounded-xl",
+                  "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+                )}
+              >
+                <Sparkles className="size-4" strokeWidth={2} aria-hidden />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-xs font-semibold uppercase tracking-wide text-rose-900 dark:text-rose-100">
+                  Unnecessary spend
+                </h2>
+                <p className="mt-1 text-[11px] leading-relaxed text-rose-900/80 dark:text-rose-200/85">
+                  Tag payments with{" "}
+                  <strong className="font-semibold text-rose-950 dark:text-rose-50">
+                    {BULLSHIT_TAG_LABEL}
+                  </strong>{" "}
+                  (also &quot;boolshit&quot; or &quot;BS&quot;). Below: what you
+                  spent on impulse / regret buys — that&apos;s what you{" "}
+                  <strong className="font-semibold">could have kept</strong> if
+                  you hadn&apos;t paid.
+                </p>
+                <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+                  <div
+                    className={cn(
+                      "rounded-xl border border-rose-200/55 bg-white/85 px-3 py-2.5",
+                      "dark:border-rose-900/40 dark:bg-zinc-950/60",
+                    )}
+                  >
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-rose-700/90 dark:text-rose-300/90">
+                      Today
+                    </p>
+                    <p className="mt-1 text-[11px] text-zinc-600 dark:text-zinc-400">
+                      Unnecessary spend
+                    </p>
+                    <p className="mt-0.5 text-sm font-bold tabular-nums text-zinc-900 dark:text-white">
+                      <TomanAmount
+                        value={bullshitSpendReport.today.total}
+                        className="text-sm font-bold"
+                      />
+                    </p>
+                    <p className="mt-2 border-t border-rose-100 pt-2 text-[11px] text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+                      Could have kept
+                    </p>
+                    <p className="mt-0.5 text-sm font-bold tabular-nums text-emerald-700 dark:text-emerald-400">
+                      <TomanAmount
+                        value={bullshitSpendReport.today.total}
+                        className="text-sm font-bold text-emerald-700 dark:text-emerald-400"
+                      />
+                    </p>
+                    <p className="mt-1.5 text-[10px] text-zinc-500 dark:text-zinc-500">
+                      {bullshitSpendReport.paymentCountToday} payment
+                      {bullshitSpendReport.paymentCountToday === 1
+                        ? ""
+                        : "s"}{" "}
+                      tagged
+                    </p>
+                  </div>
+                  <div
+                    className={cn(
+                      "rounded-xl border border-rose-200/55 bg-white/85 px-3 py-2.5",
+                      "dark:border-rose-900/40 dark:bg-zinc-950/60",
+                    )}
+                  >
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-rose-700/90 dark:text-rose-300/90">
+                      Last 7 days
+                    </p>
+                    <p className="mt-1 text-[11px] text-zinc-600 dark:text-zinc-400">
+                      Unnecessary spend
+                    </p>
+                    <p className="mt-0.5 text-sm font-bold tabular-nums text-zinc-900 dark:text-white">
+                      <TomanAmount
+                        value={bullshitSpendReport.last7Days.total}
+                        className="text-sm font-bold"
+                      />
+                    </p>
+                    <p className="mt-2 border-t border-rose-100 pt-2 text-[11px] text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+                      Could have kept
+                    </p>
+                    <p className="mt-0.5 text-sm font-bold tabular-nums text-emerald-700 dark:text-emerald-400">
+                      <TomanAmount
+                        value={bullshitSpendReport.last7Days.total}
+                        className="text-sm font-bold text-emerald-700 dark:text-emerald-400"
+                      />
+                    </p>
+                    <p className="mt-1.5 text-[10px] text-zinc-500 dark:text-zinc-500">
+                      {bullshitSpendReport.paymentCountWeek} payment
+                      {bullshitSpendReport.paymentCountWeek === 1 ? "" : "s"}{" "}
+                      tagged
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </section>
 
           <div className="mb-5 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -601,21 +712,40 @@ export function PayDashboard() {
                 <Tag className="size-3.5" /> Tags
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
-                {POPULAR_TAGS.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => toggleTag(t)}
-                    className={cn(
-                      "rounded-full border px-3 py-1 text-xs font-medium transition",
-                      pickedTags.includes(t)
-                        ? "border-indigo-500 bg-indigo-600 text-white shadow-sm"
-                        : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400",
-                    )}
-                  >
-                    {t}
-                  </button>
-                ))}
+                {POPULAR_TAGS.filter((t) => t !== BULLSHIT_TAG_LABEL).map(
+                  (t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => toggleTag(t)}
+                      className={cn(
+                        "rounded-full border px-3 py-1 text-xs font-medium transition",
+                        pickedTags.includes(t)
+                          ? "border-indigo-500 bg-indigo-600 text-white shadow-sm"
+                          : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400",
+                      )}
+                    >
+                      {t}
+                    </button>
+                  ),
+                )}
+              </div>
+              <p className="mt-3 text-[11px] font-medium text-rose-800 dark:text-rose-200/90">
+                Unnecessary / impulse
+              </p>
+              <div className="mt-1.5 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => toggleTag(BULLSHIT_TAG_LABEL)}
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-xs font-semibold transition",
+                    pickedTags.includes(BULLSHIT_TAG_LABEL)
+                      ? "border-rose-600 bg-rose-600 text-white shadow-sm dark:border-rose-500 dark:bg-rose-600"
+                      : "border-rose-200 bg-rose-50/90 text-rose-900 hover:border-rose-300 dark:border-rose-900/60 dark:bg-rose-950/50 dark:text-rose-100 dark:hover:border-rose-800",
+                  )}
+                >
+                  {BULLSHIT_TAG_LABEL}
+                </button>
               </div>
               <div className="mt-3 flex gap-2">
                 <input

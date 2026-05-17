@@ -5,6 +5,8 @@ export const STORAGE_KEY = "pay-may-state-v1";
 /** Persist “show fully settled debt & expected-in rows on main list” (local UI preference). */
 export const SHOW_SETTLED_STORAGE_KEY = "pay-may-show-settled-v1";
 
+export const BULLSHIT_TAG_LABEL = "Bullshit";
+
 export const POPULAR_TAGS = [
   "Food",
   "Transport",
@@ -18,6 +20,7 @@ export const POPULAR_TAGS = [
   "Transfer",
   "Salary",
   "Other",
+  BULLSHIT_TAG_LABEL,
 ] as const;
 
 export const ACCENT_PRESETS = [

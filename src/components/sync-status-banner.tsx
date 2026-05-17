@@ -12,7 +12,42 @@ import {
 } from "@/components/icons";
 import { cn } from "@/lib/cn";
 
-/** Compact online / sync status for the list view (and signed-out cloud hint). */
+function BadgeShell({
+  variant,
+  title,
+  children,
+}: {
+  variant: "neutral" | "ok" | "offline" | "busy" | "error";
+  title?: string;
+  children: ReactNode;
+}) {
+  const styles = {
+    neutral:
+      "border-zinc-200/80 bg-zinc-50/90 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900/70 dark:text-zinc-400",
+    ok:
+      "border-emerald-500/25 bg-emerald-500/10 text-emerald-900 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-100",
+    offline:
+      "border-amber-400/35 bg-amber-500/10 text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100",
+    busy:
+      "border-sky-400/35 bg-sky-500/10 text-sky-950 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100",
+    error:
+      "border-rose-400/35 bg-rose-500/10 text-rose-950 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100",
+  }[variant];
+
+  return (
+    <span
+      className={cn(
+        "inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-semibold tracking-tight sm:text-[11px]",
+        styles,
+      )}
+      title={title}
+    >
+      {children}
+    </span>
+  );
+}
+
+/** Minimal online / sync badge for the list view. */
 export function SyncStatusBanner() {
   const {
     syncEnabled,
@@ -28,29 +63,14 @@ export function SyncStatusBanner() {
 
   if (!user) {
     return (
-      <div
-        className={cn(
-          "mb-3 flex items-start gap-2 rounded-xl border px-3 py-2.5",
-          "border-zinc-200/90 bg-zinc-50/90 text-[11px] leading-snug text-zinc-600",
-          "dark:border-zinc-800 dark:bg-zinc-950/80 dark:text-zinc-400",
-        )}
-      >
-        <Cloud
-          className="mt-px size-4 shrink-0 text-zinc-400 dark:text-zinc-500"
-          strokeWidth={2}
-          aria-hidden
-        />
-        <p>
-          <span className="font-semibold text-zinc-800 dark:text-zinc-200">
-            Cloud sync
-          </span>
-          <span className="text-zinc-500 dark:text-zinc-500"> · </span>
-          Open{" "}
-          <span className="font-medium text-zinc-700 dark:text-zinc-300">
-            More
-          </span>{" "}
-          and sign in to save your ledger to the server.
-        </p>
+      <div className="mb-2">
+        <BadgeShell
+          variant="neutral"
+          title="Open More and sign in to save your ledger to the server."
+        >
+          <Cloud className="size-3 shrink-0 opacity-80" strokeWidth={2} aria-hidden />
+          <span className="truncate">Local · Sign in to sync</span>
+        </BadgeShell>
       </div>
     );
   }
@@ -63,137 +83,105 @@ export function SyncStatusBanner() {
         ? "busy"
         : "ok";
 
-  const shell = {
-    offline:
-      "border-amber-200/90 bg-amber-50/90 text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/35 dark:text-amber-100",
-    error:
-      "border-rose-200/90 bg-rose-50/90 text-rose-950 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100",
-    busy:
-      "border-sky-200/90 bg-sky-50/90 text-sky-950 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-100",
-    ok:
-      "border-emerald-200/80 bg-emerald-50/70 text-emerald-950 dark:border-emerald-900/45 dark:bg-emerald-950/30 dark:text-emerald-100",
-  }[variant];
-
   const canRetry = networkOnline && Boolean(syncError) && !syncBusy;
-
   const showSyncSpinner = networkOnline && syncBusy;
+  const showSyncNow =
+    variant === "busy" && !syncBusy && pendingOutboxCount > 0;
 
-  let leadingIcon: ReactNode = null;
+  let icon: ReactNode = null;
+  let badgeVariant: "ok" | "offline" | "busy" | "error" = "ok";
+  let shortLabel = "";
+  let tooltip = "";
+
   if (!networkOnline) {
-    leadingIcon = (
-      <CloudOff
-        className="mt-px size-4 shrink-0 opacity-90"
-        strokeWidth={2}
-        aria-hidden
-      />
+    badgeVariant = "offline";
+    icon = (
+      <CloudOff className="size-3 shrink-0 opacity-90" strokeWidth={2} aria-hidden />
     );
+    shortLabel = "Offline";
+    tooltip =
+      pendingOutboxCount > 0
+        ? `Saved on this device. ${pendingOutboxCount} change${pendingOutboxCount === 1 ? "" : "s"} will upload when you’re back online.`
+        : "Saved on this device. Changes will upload when you’re back online.";
   } else if (variant === "error") {
-    leadingIcon = (
-      <AlertCircle
-        className="mt-px size-4 shrink-0 opacity-90"
-        strokeWidth={2}
-        aria-hidden
-      />
+    badgeVariant = "error";
+    icon = (
+      <AlertCircle className="size-3 shrink-0" strokeWidth={2} aria-hidden />
     );
+    shortLabel = "Sync error";
+    tooltip = syncError ?? "Sync failed.";
   } else if (showSyncSpinner) {
-    leadingIcon = (
+    badgeVariant = "busy";
+    icon = (
       <LoaderCircle
-        className="mt-px size-4 shrink-0 animate-spin opacity-90"
+        className="size-3 shrink-0 animate-spin opacity-90"
         strokeWidth={2}
         aria-hidden
       />
     );
+    shortLabel = "Syncing";
+    tooltip = "Sending your latest edits to the server.";
   } else if (variant === "busy") {
-    leadingIcon = (
-      <Cloud
-        className="mt-px size-4 shrink-0 opacity-90"
-        strokeWidth={2}
-        aria-hidden
-      />
+    badgeVariant = "busy";
+    icon = (
+      <Cloud className="size-3 shrink-0 opacity-90" strokeWidth={2} aria-hidden />
     );
-  } else if (variant === "ok") {
-    leadingIcon = (
+    shortLabel =
+      pendingOutboxCount > 0
+        ? `${pendingOutboxCount} queued`
+        : "Sync";
+    tooltip =
+      pendingOutboxCount > 0
+        ? `${pendingOutboxCount} change${pendingOutboxCount === 1 ? "" : "s"} waiting to upload. Use refresh if nothing happens.`
+        : "Waiting to sync.";
+  } else {
+    badgeVariant = "ok";
+    icon = (
       <Check
-        className="mt-px size-4 shrink-0 text-emerald-600 dark:text-emerald-400"
-        strokeWidth={2.5}
+        className="size-3 shrink-0 text-emerald-600 dark:text-emerald-400"
+        strokeWidth={2.75}
         aria-hidden
       />
     );
+    shortLabel = "Synced";
+    tooltip = "Online — all changes saved to the server.";
   }
 
-  const title =
-    variant === "offline"
-      ? "Offline"
-      : variant === "error"
-        ? "Sync issue"
-        : variant === "busy"
-          ? syncBusy
-            ? "Syncing…"
-            : pendingOutboxCount > 0
-              ? `${pendingOutboxCount} change${pendingOutboxCount === 1 ? "" : "s"} queued`
-              : "Syncing…"
-          : "Online";
-
-  const detail =
-    variant === "offline"
-      ? pendingOutboxCount > 0
-        ? `Saved on device · ${pendingOutboxCount} waiting to upload`
-        : "Saved on this device · will upload when back online"
-      : variant === "error"
-        ? syncError
-        : variant === "busy"
-          ? syncBusy
-            ? "Sending your latest edits to the server"
-            : "Waiting to sync · tap Sync if nothing happens"
-          : "All changes saved to the server";
-
   return (
-    <div
-      className={cn(
-        "mb-3 flex flex-wrap items-center gap-x-2 gap-y-2 rounded-xl border px-3 py-2.5 shadow-sm",
-        shell,
-      )}
-    >
-      <div className="flex min-w-0 flex-1 items-start gap-2">
-        {leadingIcon}
-        <div className="min-w-0">
-          <p className="text-[11px] font-semibold leading-tight sm:text-xs">
-            {title}
-            {variant === "ok" && (
-              <span className="font-normal opacity-80"> · Synced</span>
-            )}
-          </p>
-          <p
-            className="mt-0.5 max-w-[min(100%,28rem)] text-[11px] leading-snug opacity-90 sm:text-xs"
-            title={variant === "error" && syncError ? syncError : undefined}
-          >
-            {detail}
-          </p>
-        </div>
-      </div>
+    <div className="mb-2 flex flex-wrap items-center gap-1.5">
+      <BadgeShell variant={badgeVariant} title={tooltip}>
+        {icon}
+        <span className="min-w-0 truncate">{shortLabel}</span>
+      </BadgeShell>
 
-      <div className="flex shrink-0 items-center gap-2">
-        {canRetry && (
-          <button
-            type="button"
-            onClick={() => void resync()}
-            className="inline-flex items-center justify-center gap-1 rounded-lg border border-rose-300/80 bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-rose-900 transition hover:bg-white dark:border-rose-800 dark:bg-rose-950/70 dark:text-rose-100 dark:hover:bg-rose-950"
-          >
-            <RefreshCw className="size-3" />
-            Retry
-          </button>
-        )}
-        {variant === "busy" && !syncBusy && pendingOutboxCount > 0 && (
-          <button
-            type="button"
-            onClick={() => void resync()}
-            className="inline-flex items-center justify-center gap-1 rounded-lg border border-sky-300/80 bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-sky-950 transition hover:bg-white dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-100 dark:hover:bg-sky-950"
-          >
-            <RefreshCw className="size-3" />
-            Sync now
-          </button>
-        )}
-      </div>
+      {canRetry && (
+        <button
+          type="button"
+          onClick={() => void resync()}
+          title={syncError ?? "Retry sync"}
+          className={cn(
+            "inline-flex size-7 items-center justify-center rounded-full border border-rose-300/60 bg-white/90 text-rose-800 shadow-sm transition",
+            "hover:bg-white active:scale-95 dark:border-rose-800/80 dark:bg-rose-950/50 dark:text-rose-100 dark:hover:bg-rose-950/70",
+          )}
+          aria-label="Retry sync"
+        >
+          <RefreshCw className="size-3.5" strokeWidth={2} />
+        </button>
+      )}
+      {showSyncNow && (
+        <button
+          type="button"
+          onClick={() => void resync()}
+          title="Upload queued changes now"
+          className={cn(
+            "inline-flex size-7 items-center justify-center rounded-full border border-sky-300/60 bg-white/90 text-sky-900 shadow-sm transition",
+            "hover:bg-white active:scale-95 dark:border-sky-800/80 dark:bg-sky-950/50 dark:text-sky-100 dark:hover:bg-sky-950/70",
+          )}
+          aria-label="Sync now"
+        >
+          <RefreshCw className="size-3.5" strokeWidth={2} />
+        </button>
+      )}
     </div>
   );
 }
