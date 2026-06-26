@@ -45,7 +45,7 @@ export function LoanCard({ loan, year, month, onToggle, onDelete }: {
     <div className={cn(
       "rounded-2xl border p-4 bg-white dark:bg-zinc-900 transition-all",
       paid
-        ? "border-emerald-200 dark:border-emerald-900"
+        ? "border-zinc-300 dark:border-zinc-700"
         : isOverdue
           ? "border-red-200 dark:border-red-900"
           : "border-zinc-200 dark:border-zinc-800",
@@ -58,8 +58,8 @@ export function LoanCard({ loan, year, month, onToggle, onDelete }: {
           className={cn(
             "mt-0.5 w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition",
             paid
-              ? "bg-emerald-500 border-emerald-500 text-white"
-              : "border-zinc-300 dark:border-zinc-600 hover:border-indigo-400",
+              ? "bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white text-white dark:text-zinc-900"
+              : "border-zinc-300 dark:border-zinc-600 hover:border-zinc-900 dark:border-white",
           )}
         >
           {paid && <Check className="w-3.5 h-3.5" strokeWidth={3} />}
@@ -89,7 +89,7 @@ export function LoanCard({ loan, year, month, onToggle, onDelete }: {
           </div>
 
           {paid && loan.payment?.paidAt && (
-            <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+            <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
               Paid {new Date(loan.payment.paidAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
             </div>
           )}
@@ -104,7 +104,7 @@ export function LoanCard({ loan, year, month, onToggle, onDelete }: {
               href={loan.paymentUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-900 dark:text-white  hover:underline"
             >
               <ExternalLink className="w-3 h-3" />
               Pay now

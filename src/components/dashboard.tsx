@@ -83,8 +83,8 @@ export function Dashboard({ loans: initialLoans, currentYear, currentMonth }: {
       <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
-              <span className="text-white text-sm font-bold">D</span>
+            <div className="w-7 h-7 rounded-lg bg-zinc-900 dark:bg-white flex items-center justify-center">
+              <span className="text-white dark:text-zinc-900 text-sm font-bold">D</span>
             </div>
             <span className="font-semibold text-zinc-900 dark:text-white">Duely</span>
           </div>
@@ -116,7 +116,7 @@ export function Dashboard({ loans: initialLoans, currentYear, currentMonth }: {
               {MONTHS[month - 1]} {year}
             </div>
             {isCurrentMonth && (
-              <div className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">This month</div>
+              <div className="text-xs text-zinc-900 dark:text-white  font-medium">This month</div>
             )}
           </div>
           <button
@@ -172,7 +172,7 @@ export function Dashboard({ loans: initialLoans, currentYear, currentMonth }: {
         {/* Add Button */}
         <button
           onClick={() => setShowAdd(true)}
-          className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 py-4 text-zinc-500 dark:text-zinc-400 hover:border-indigo-400 hover:text-indigo-600 dark:hover:border-indigo-500 dark:hover:text-indigo-400 transition font-medium"
+          className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 py-4 text-zinc-500 dark:text-zinc-400 hover:border-zinc-900 dark:border-white hover:text-zinc-900 dark:text-white   transition font-medium"
         >
           <Plus className="w-4 h-4" />
           Add loan

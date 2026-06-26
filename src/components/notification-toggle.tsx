@@ -53,7 +53,7 @@ export function NotificationToggle() {
       title={enabled ? "Disable notifications" : "Enable notifications"}
       className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded-lg transition disabled:opacity-50"
     >
-      {enabled ? <Bell className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> : <BellOff className="w-4 h-4" />}
+      {enabled ? <Bell className="w-4 h-4 text-zinc-900 dark:text-white " /> : <BellOff className="w-4 h-4" />}
     </button>
   );
 }

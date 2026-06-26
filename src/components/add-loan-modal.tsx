@@ -53,7 +53,7 @@ export function AddLoanModal({ onClose, onAdd }: {
               placeholder="e.g. Car loan, Mortgage"
               value={name}
               onChange={e => setName(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-zinc-900 dark:text-white placeholder-zinc-400 outline-none focus:border-indigo-500 dark:focus:border-indigo-400 transition text-sm"
+              className="mt-1.5 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-zinc-900 dark:text-white placeholder-zinc-400 outline-none focus:border-zinc-900 dark:focus:border-zinc-900 dark:border-white transition text-sm"
             />
           </label>
 
@@ -68,7 +68,7 @@ export function AddLoanModal({ onClose, onAdd }: {
                 placeholder="0.00"
                 value={amount}
                 onChange={e => setAmount(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-zinc-900 dark:text-white placeholder-zinc-400 outline-none focus:border-indigo-500 dark:focus:border-indigo-400 transition text-sm"
+                className="mt-1.5 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-zinc-900 dark:text-white placeholder-zinc-400 outline-none focus:border-zinc-900 dark:focus:border-zinc-900 dark:border-white transition text-sm"
               />
             </label>
             <label className="block">
@@ -76,7 +76,7 @@ export function AddLoanModal({ onClose, onAdd }: {
               <select
                 value={currency}
                 onChange={e => setCurrency(e.target.value)}
-                className="mt-1.5 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-zinc-900 dark:text-white outline-none focus:border-indigo-500 dark:focus:border-indigo-400 transition text-sm"
+                className="mt-1.5 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-zinc-900 dark:border-white transition text-sm"
               >
                 {CURRENCIES.map(c => <option key={c}>{c}</option>)}
               </select>
@@ -92,7 +92,7 @@ export function AddLoanModal({ onClose, onAdd }: {
               max="31"
               value={dueDay}
               onChange={e => setDueDay(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-zinc-900 dark:text-white outline-none focus:border-indigo-500 dark:focus:border-indigo-400 transition text-sm"
+              className="mt-1.5 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-zinc-900 dark:text-white outline-none focus:border-zinc-900 dark:focus:border-zinc-900 dark:border-white transition text-sm"
             />
           </label>
 
@@ -103,14 +103,14 @@ export function AddLoanModal({ onClose, onAdd }: {
               placeholder="https://bank.example.com/pay"
               value={paymentUrl}
               onChange={e => setPaymentUrl(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-zinc-900 dark:text-white placeholder-zinc-400 outline-none focus:border-indigo-500 dark:focus:border-indigo-400 transition text-sm"
+              className="mt-1.5 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-zinc-900 dark:text-white placeholder-zinc-400 outline-none focus:border-zinc-900 dark:focus:border-zinc-900 dark:border-white transition text-sm"
             />
           </label>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-2xl bg-indigo-600 py-3 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-60 transition mt-2"
+            className="w-full rounded-2xl bg-zinc-900 dark:bg-white py-3 text-sm font-semibold text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-200 disabled:opacity-60 transition mt-2"
           >
             {loading ? "Adding…" : "Add loan"}
           </button>
