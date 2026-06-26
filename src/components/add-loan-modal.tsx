@@ -32,9 +32,13 @@ export function AddLoanModal({ onClose, onAdd }: {
   const now = new Date();
   const gYear = now.getFullYear();
   const gMonth = now.getMonth() + 1;
-  const thisJalali = toJalali(gYear, gMonth, now.getDate());
+  const thisJalali = toJalali(gYear, gMonth, now.getDate()); // actual day for correct Jalali month display
   const nextG = gMonth === 12 ? { year: gYear + 1, month: 1 } : { year: gYear, month: gMonth + 1 };
-  const nextJalali = toJalali(nextG.year, nextG.month);
+  // next Jalali month = thisJalali.month+1 (not next Gregorian month via midpoint)
+  const nextJalaliMonth = thisJalali.month === 12 ? 1 : thisJalali.month + 1;
+  const nextJalaliYear = thisJalali.month === 12 ? thisJalali.year + 1 : thisJalali.year;
+  const nextJalali = { year: nextJalaliYear, month: nextJalaliMonth };
+  const nextJalali2 = toJalali(nextG.year, nextG.month); // keep for Gregorian mode
 
   const [name, setName] = useState("");
   const [amountDisplay, setAmountDisplay] = useState("");
@@ -46,10 +50,17 @@ export function AddLoanModal({ onClose, onAdd }: {
   const [customMonth, setCustomMonth] = useState(shamsi ? String(thisJalali.month) : String(gMonth));
   const [customYear, setCustomYear] = useState(shamsi ? String(thisJalali.year) : String(gYear));
   const [loading, setLoading] = useState(false);
+  const [isDebt, setIsDebt] = useState(false);
 
   function resolveStart(): { startYear: number; startMonth: number } {
-    if (startMode === "this") return { startYear: gYear, startMonth: gMonth };
-    if (startMode === "next") return { startYear: nextG.year, startMonth: nextG.month };
+    if (startMode === "this") {
+      if (shamsi) { const g = fromJalali(thisJalali.year, thisJalali.month, 15); return { startYear: g.year, startMonth: g.month }; }
+      return { startYear: gYear, startMonth: gMonth };
+    }
+    if (startMode === "next") {
+      if (shamsi) { const g = fromJalali(nextJalali.year, nextJalali.month, 15); return { startYear: g.year, startMonth: g.month }; }
+      return { startYear: nextG.year, startMonth: nextG.month };
+    }
     const jm = parseInt(customMonth, 10);
     const jy = parseInt(customYear, 10);
     if (isNaN(jm) || isNaN(jy)) return { startYear: gYear, startMonth: gMonth };
@@ -102,7 +113,7 @@ export function AddLoanModal({ onClose, onAdd }: {
           <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-600" />
         </div>
         <div className="flex items-center justify-between px-6 py-3 border-b border-zinc-100 dark:border-zinc-800 flex-shrink-0">
-          <h2 className="font-semibold text-zinc-900 dark:text-white">{fa ? "افزودن وام" : "Add loan"}</h2>
+          <h2 className="font-semibold text-zinc-900 dark:text-white">{fa ? "قرارداد جدید" : "New payment"}</h2>
           <button onClick={onClose} className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
             <X className="w-4 h-4" />
           </button>
@@ -176,6 +187,35 @@ export function AddLoanModal({ onClose, onAdd }: {
             </span>
             <input type="url" placeholder="https://" value={paymentUrl} onChange={e => setPaymentUrl(e.target.value)} className={inputCls} />
           </label>
+
+          {/* Debt toggle */}
+          <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/60">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
+                {fa ? "بدهی شخصی" : "Personal debt"}
+              </span>
+              <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                {fa ? "پرداخت به فرد، نه بانک" : "Owed to a person, not a bank"}
+              </span>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isDebt}
+              onClick={() => setIsDebt(d => !d)}
+              className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                isDebt
+                  ? "bg-zinc-900 dark:bg-white focus-visible:outline-zinc-900"
+                  : "bg-zinc-200 dark:bg-zinc-700 focus-visible:outline-zinc-400"
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white dark:bg-zinc-900 shadow-sm transition-transform duration-200 ${
+                  isDebt ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
 
           <button type="submit" disabled={loading} className="w-full rounded-2xl bg-zinc-900 dark:bg-white py-3 text-sm font-semibold text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-200 disabled:opacity-60 transition">
             {loading ? (fa ? "در حال ذخیره…" : "Adding…") : (fa ? "افزودن" : "Add loan")}

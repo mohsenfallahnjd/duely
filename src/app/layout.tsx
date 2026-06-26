@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Vazirmatn } from "next/font/google";
+import { Suspense } from "react";
 import { SessionProvider } from "@/components/session-provider";
 import { RegisterServiceWorker } from "@/components/register-sw";
 import { ThemeProvider } from "@/components/theme-provider";
+import { NavigationProgress } from "@/components/navigation-progress";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
@@ -37,6 +39,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning className={`${geist.variable} ${geistMono.variable} ${vazirmatn.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
         <ThemeProvider>
+          <Suspense>
+            <NavigationProgress />
+          </Suspense>
           <Analytics />
           <RegisterServiceWorker />
           <SessionProvider>{children}</SessionProvider>
