@@ -62,8 +62,10 @@ export function EditLoanModal({ loan, onClose, onSave }: {
     if (startMode === "existing") return { startYear: loan.startYear, startMonth: loan.startMonth };
     const jm = parseInt(customMonth, 10);
     const jy = parseInt(customYear, 10);
+    if (isNaN(jm) || isNaN(jy)) return { startYear: loan.startYear, startMonth: loan.startMonth };
     if (shamsi) {
       const g = fromJalali(jy, jm, 15);
+      if (isNaN(g.year) || isNaN(g.month)) return { startYear: loan.startYear, startMonth: loan.startMonth };
       return { startYear: g.year, startMonth: g.month };
     }
     return { startYear: jy, startMonth: jm };

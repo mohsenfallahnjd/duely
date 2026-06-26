@@ -31,8 +31,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       dueDay: body.dueDay ? Number(body.dueDay) : undefined,
       paymentUrl: body.paymentUrl !== undefined ? (body.paymentUrl ? String(body.paymentUrl).trim() : null) : undefined,
       installments: body.installments !== undefined ? (body.installments ? Number(body.installments) : null) : undefined,
-      startYear: body.startYear ? Number(body.startYear) : undefined,
-      startMonth: body.startMonth ? Number(body.startMonth) : undefined,
+      startYear: body.startYear != null && !Number.isNaN(Number(body.startYear)) ? Number(body.startYear) : undefined,
+      startMonth: body.startMonth != null && !Number.isNaN(Number(body.startMonth)) ? Number(body.startMonth) : undefined,
     })
     .where(and(eq(loans.id, id), eq(loans.userId, session.user.id)))
     .returning();

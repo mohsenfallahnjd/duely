@@ -52,8 +52,10 @@ export function AddLoanModal({ onClose, onAdd }: {
     if (startMode === "next") return { startYear: nextG.year, startMonth: nextG.month };
     const jm = parseInt(customMonth, 10);
     const jy = parseInt(customYear, 10);
+    if (isNaN(jm) || isNaN(jy)) return { startYear: gYear, startMonth: gMonth };
     if (shamsi) {
       const g = fromJalali(jy, jm, 15);
+      if (isNaN(g.year) || isNaN(g.month)) return { startYear: gYear, startMonth: gMonth };
       return { startYear: g.year, startMonth: g.month };
     }
     return { startYear: jy, startMonth: jm };
