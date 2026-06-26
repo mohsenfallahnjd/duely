@@ -7,6 +7,7 @@ import { NotificationToggle } from "./notification-toggle";
 import { ThemeToggle } from "./theme-toggle";
 import { SettingsModal } from "./settings-modal";
 import { CalendarProvider, useCalendar } from "./calendar-context";
+import { ToastProvider, useToast } from "./toast";
 import { toJalali, JALALI_MONTHS, getInstallmentLabel, getMonthLabel } from "@/lib/calendar";
 import { signOut } from "next-auth/react";
 import { Plus, LogOut, Settings, CalendarDays, LayoutList, Rows3, Check, ExternalLink } from "lucide-react";
@@ -38,7 +39,9 @@ type Payment = {
 export function Dashboard(props: { loans: Loan[]; allPayments: Payment[] }) {
   return (
     <CalendarProvider>
-      <DashboardInner {...props} />
+      <ToastProvider>
+        <DashboardInner {...props} />
+      </ToastProvider>
     </CalendarProvider>
   );
 }
@@ -49,6 +52,7 @@ function DashboardInner({ loans: initialLoans, allPayments: initialPayments }: {
 }) {
   const { cal, lang } = useCalendar();
   const fa = lang === "fa";
+  const { toast } = useToast();
   const [loans, setLoans] = useState(initialLoans);
   const [allPayments, setAllPayments] = useState<Payment[]>(initialPayments);
   const [showAdd, setShowAdd] = useState(false);
@@ -71,12 +75,13 @@ function DashboardInner({ loans: initialLoans, allPayments: initialPayments }: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ loanId, year, month, paid }),
     });
-    if (!res.ok) return null;
+    if (!res.ok) { toast(fa ? "خطا در ثبت پرداخت" : "Failed to update", "error"); return null; }
     const payment: Payment = await res.json();
     setAllPayments(prev => [
       ...prev.filter(p => !(p.loanId === loanId && p.year === year && p.month === month)),
       payment,
     ]);
+    toast(paid ? (fa ? "پرداخت ثبت شد ✓" : "Marked paid ✓") : (fa ? "پرداخت لغو شد" : "Payment removed"));
     return payment;
   }
 
@@ -89,15 +94,17 @@ function DashboardInner({ loans: initialLoans, allPayments: initialPayments }: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (!res.ok) return;
+    if (!res.ok) { toast(fa ? "خطا در افزودن وام" : "Failed to add loan", "error"); return; }
     const loan = await res.json();
     setLoans(prev => [...prev, loan]);
     setShowAdd(false);
+    toast(fa ? "وام اضافه شد ✓" : "Loan added ✓");
   }
 
   async function deleteLoan(id: string) {
-    await fetch(`/api/loans/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/loans/${id}`, { method: "DELETE" });
     setLoans(prev => prev.filter(l => l.id !== id));
+    if (res.ok) toast(fa ? "وام حذف شد" : "Loan deleted");
   }
 
   async function updateLoan(id: string, data: Partial<Loan>) {
@@ -106,9 +113,10 @@ function DashboardInner({ loans: initialLoans, allPayments: initialPayments }: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    if (!res.ok) return;
+    if (!res.ok) { toast(fa ? "خطا در ذخیره" : "Failed to save", "error"); return; }
     const updated = await res.json();
     setLoans(prev => prev.map(l => l.id === id ? { ...l, ...updated } : l));
+    toast(fa ? "ذخیره شد ✓" : "Saved ✓");
   }
 
   // Today display

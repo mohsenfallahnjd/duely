@@ -43,7 +43,7 @@ export function EditLoanModal({ loan, onClose, onSave }: {
   const gMonth = now.getMonth() + 1;
 
   // Convert existing start to display calendar for default custom values
-  const existingJalali = shamsi ? toJalali(loan.startYear, loan.startMonth, 1) : null;
+  const existingJalali = shamsi ? toJalali(loan.startYear, loan.startMonth, 15) : null;
   const existingDisplayMonth = existingJalali ? existingJalali.month : loan.startMonth;
   const existingDisplayYear = existingJalali ? existingJalali.year : loan.startYear;
 
@@ -63,7 +63,7 @@ export function EditLoanModal({ loan, onClose, onSave }: {
     const jm = parseInt(customMonth, 10);
     const jy = parseInt(customYear, 10);
     if (shamsi) {
-      const g = fromJalali(jy, jm);
+      const g = fromJalali(jy, jm, 15);
       return { startYear: g.year, startMonth: g.month };
     }
     return { startYear: jy, startMonth: jm };

@@ -53,7 +53,7 @@ export function AddLoanModal({ onClose, onAdd }: {
     const jm = parseInt(customMonth, 10);
     const jy = parseInt(customYear, 10);
     if (shamsi) {
-      const g = fromJalali(jy, jm);
+      const g = fromJalali(jy, jm, 15);
       return { startYear: g.year, startMonth: g.month };
     }
     return { startYear: jy, startMonth: jm };

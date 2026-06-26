@@ -21,11 +21,10 @@ export function fromJalali(jYear: number, jMonth: number, jDay = 1) {
   return { year: d.year as unknown as number, month: d.month as unknown as number, day: d.day as unknown as number };
 }
 
-// Installment row label — uses actual due day to pick correct Jalali month
-export function getInstallmentLabel(gYear: number, gMonth: number, dueDay: number, cal: CalendarType): string {
+// Installment row label — use day=15 (midpoint) for stable Jalali month mapping
+export function getInstallmentLabel(gYear: number, gMonth: number, _dueDay: number, cal: CalendarType): string {
   if (cal === "jalali") {
-    const safeDay = Math.min(dueDay, 28);
-    const j = toJalali(gYear, gMonth, safeDay);
+    const j = toJalali(gYear, gMonth, 15);
     return `${j.monthName} ${j.year}`;
   }
   return `${GREGORIAN_MONTHS[gMonth - 1]} ${gYear}`;
@@ -34,7 +33,7 @@ export function getInstallmentLabel(gYear: number, gMonth: number, dueDay: numbe
 // Month header label for calendar navigation
 export function getMonthLabel(gYear: number, gMonth: number, cal: CalendarType) {
   if (cal === "jalali") {
-    const j = toJalali(gYear, gMonth, 1);
+    const j = toJalali(gYear, gMonth, 15);
     return `${j.monthName} ${j.year}`;
   }
   return `${GREGORIAN_MONTHS[gMonth - 1]} ${gYear}`;
@@ -44,7 +43,7 @@ export function isCurrentMonth(gYear: number, gMonth: number, cal: CalendarType)
   const now = new Date();
   if (cal === "jalali") {
     const cur = toJalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
-    const disp = toJalali(gYear, gMonth, 1);
+    const disp = toJalali(gYear, gMonth, 15);
     return cur.year === disp.year && cur.month === disp.month;
   }
   return gYear === now.getFullYear() && gMonth === now.getMonth() + 1;

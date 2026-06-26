@@ -8,9 +8,9 @@
   --font-vazirmatn: "Vazirmatn", sans-serif;
 }
 
-* {
+/* * {
   font-family: var(--font-geist);
-}
+} */
 
 body {
   @apply antialiased;
