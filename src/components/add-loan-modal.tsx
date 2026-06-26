@@ -32,7 +32,7 @@ export function AddLoanModal({ onClose, onAdd }: {
   const now = new Date();
   const gYear = now.getFullYear();
   const gMonth = now.getMonth() + 1;
-  const thisJalali = toJalali(gYear, gMonth);
+  const thisJalali = toJalali(gYear, gMonth, now.getDate());
   const nextG = gMonth === 12 ? { year: gYear + 1, month: 1 } : { year: gYear, month: gMonth + 1 };
   const nextJalali = toJalali(nextG.year, nextG.month);
 

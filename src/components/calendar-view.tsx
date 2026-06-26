@@ -112,11 +112,11 @@ function CalendarInner({ loans, allPayments: initialPayments }: { loans: Loan[];
     return true;
   }
 
-  // Loans due on a specific day (checking Gregorian)
+  // day is in display-calendar coordinates; dueDay stored as same-calendar day number
   function loansDueOnDay(day: number): Array<{ loan: Loan; paid: boolean }> {
-    const { gYear, gMonth, gDay } = toGregorian(day);
+    const { gYear, gMonth } = toGregorian(day);
     return loans
-      .filter(l => l.dueDay === gDay && loanActiveForGMonth(l, gYear, gMonth))
+      .filter(l => l.dueDay === day && loanActiveForGMonth(l, gYear, gMonth))
       .map(l => {
         const payment = allPayments.find(
           p => p.loanId === l.id && p.year === gYear && p.month === gMonth
