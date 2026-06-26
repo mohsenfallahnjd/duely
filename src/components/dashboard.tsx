@@ -64,9 +64,10 @@ function DashboardInner({ loans: initialLoans, currentYear, currentMonth }: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ loanId, year, month, paid }),
     });
-    if (!res.ok) return;
+    if (!res.ok) return null;
     const payment = await res.json();
     setLoans(prev => prev.map(l => l.id === loanId ? { ...l, payment } : l));
+    return payment;
   }
 
   async function addLoan(data: { name: string; amount: number; currency: string; dueDay: number; paymentUrl: string; installments: number | null; startYear: number; startMonth: number }) {
@@ -86,10 +87,17 @@ function DashboardInner({ loans: initialLoans, currentYear, currentMonth }: {
     setLoans(prev => prev.filter(l => l.id !== id));
   }
 
-  // only show loans that have started by the displayed month
-  const visibleLoans = loans.filter(l =>
-    l.startYear < year || (l.startYear === year && l.startMonth <= month)
-  );
+  // filter by start date and installments end date
+  const visibleLoans = loans.filter(l => {
+    const startTotal = l.startYear * 12 + l.startMonth - 1;
+    const curTotal = year * 12 + month - 1;
+    if (curTotal < startTotal) return false;
+    if (l.installments) {
+      const endTotal = startTotal + l.installments - 1;
+      if (curTotal > endTotal) return false;
+    }
+    return true;
+  });
   const paidCount = visibleLoans.filter(l => l.payment?.paid).length;
   const isCurrent = isCurrentMonth(year, month, cal);
 

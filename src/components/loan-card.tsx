@@ -22,7 +22,7 @@ export function LoanCard({ loan: initialLoan, year, month, onToggle, onDelete }:
   loan: Loan;
   year: number;
   month: number;
-  onToggle: (id: string, paid: boolean) => Promise<void>;
+  onToggle: (id: string, paid: boolean) => Promise<{ id: string; paid: boolean; paidAt: Date | null } | null>;
   onDelete: (id: string) => Promise<void>;
 }) {
   const { cal, lang } = useCalendar();
@@ -50,7 +50,8 @@ export function LoanCard({ loan: initialLoan, year, month, onToggle, onDelete }:
 
   async function handleToggle() {
     setLoading(true);
-    await onToggle(loan.id, !paid);
+    const payment = await onToggle(loan.id, !paid);
+    if (payment) setLoan(prev => ({ ...prev, payment }));
     setLoading(false);
   }
 
@@ -72,7 +73,11 @@ export function LoanCard({ loan: initialLoan, year, month, onToggle, onDelete }:
               : "border-zinc-300 dark:border-zinc-600 hover:border-zinc-900 dark:hover:border-white",
           )}
         >
-          {paid && <Check className="w-3.5 h-3.5 text-white dark:text-zinc-900" strokeWidth={3} />}
+          {loading ? (
+            <span className="w-2.5 h-2.5 rounded-full border-2 border-zinc-400 border-t-zinc-900 dark:border-t-white animate-spin" />
+          ) : paid ? (
+            <Check className="w-3.5 h-3.5 text-white dark:text-zinc-900" strokeWidth={3} />
+          ) : null}
         </button>
 
         <div className="flex-1 min-w-0">

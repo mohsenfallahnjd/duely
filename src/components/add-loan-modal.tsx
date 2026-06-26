@@ -27,6 +27,7 @@ export function AddLoanModal({ onClose, onAdd }: {
 }) {
   const { cal, lang, currency: defaultCurrency } = useCalendar();
   const fa = lang === "fa";
+  const shamsi = cal === "jalali"; // calendar display only
 
   const now = new Date();
   const gYear = now.getFullYear();
@@ -42,8 +43,8 @@ export function AddLoanModal({ onClose, onAdd }: {
   const [paymentUrl, setPaymentUrl] = useState("");
   const [installments, setInstallments] = useState("");
   const [startMode, setStartMode] = useState<StartMode>("this");
-  const [customMonth, setCustomMonth] = useState(fa ? String(thisJalali.month) : String(gMonth));
-  const [customYear, setCustomYear] = useState(fa ? String(thisJalali.year) : String(gYear));
+  const [customMonth, setCustomMonth] = useState(shamsi ? String(thisJalali.month) : String(gMonth));
+  const [customYear, setCustomYear] = useState(shamsi ? String(thisJalali.year) : String(gYear));
   const [loading, setLoading] = useState(false);
 
   function resolveStart(): { startYear: number; startMonth: number } {
@@ -51,7 +52,7 @@ export function AddLoanModal({ onClose, onAdd }: {
     if (startMode === "next") return { startYear: nextG.year, startMonth: nextG.month };
     const jm = parseInt(customMonth, 10);
     const jy = parseInt(customYear, 10);
-    if (fa) {
+    if (shamsi) {
       const g = fromJalali(jy, jm);
       return { startYear: g.year, startMonth: g.month };
     }
@@ -79,17 +80,17 @@ export function AddLoanModal({ onClose, onAdd }: {
     {
       value: "this",
       label: fa ? "ماه جاری" : "This month",
-      sub: fa ? JALALI_MONTHS[thisJalali.month - 1] + " " + thisJalali.year : GREGORIAN_MONTHS[gMonth - 1] + " " + gYear,
+      sub: shamsi ? JALALI_MONTHS[thisJalali.month - 1] + " " + thisJalali.year : GREGORIAN_MONTHS[gMonth - 1] + " " + gYear,
     },
     {
       value: "next",
       label: fa ? "ماه آینده" : "Next month",
-      sub: fa ? JALALI_MONTHS[nextJalali.month - 1] + " " + nextJalali.year : GREGORIAN_MONTHS[nextG.month - 1] + " " + nextG.year,
+      sub: shamsi ? JALALI_MONTHS[nextJalali.month - 1] + " " + nextJalali.year : GREGORIAN_MONTHS[nextG.month - 1] + " " + nextG.year,
     },
     { value: "custom", label: fa ? "انتخاب ماه" : "Custom", sub: "" },
   ];
 
-  const months = fa ? JALALI_MONTHS : GREGORIAN_MONTHS;
+  const months = shamsi ? JALALI_MONTHS : GREGORIAN_MONTHS;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
