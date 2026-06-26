@@ -143,7 +143,7 @@ function DashboardInner({ loans: initialLoans, allPayments: initialPayments }: {
   }, [loans, now]);
 
   return (
-    <div className={`min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 ${fa ? "font-[vazirmatn,sans-serif]" : ""}`} dir={fa ? "rtl" : "ltr"}>
+    <div className={`min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 ${fa ? "font-[family-name:var(--font-vazirmatn)]" : ""}`} dir={fa ? "rtl" : "ltr"}>
       <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -297,7 +297,7 @@ function ByMonthView({ loans, allMonths, now, cal, fa, lang, getPayment, onToggl
             {/* Month header */}
             <div className="flex items-center justify-between mb-2 px-1">
               <div className="flex items-center gap-2">
-                <h3 className={`font-semibold text-zinc-900 dark:text-white ${fa ? "font-[vazirmatn,sans-serif]" : ""}`}>{monthLabel}</h3>
+                <h3 className={`font-semibold text-zinc-900 dark:text-white ${fa ? "font-[family-name:var(--font-vazirmatn)]" : ""}`}>{monthLabel}</h3>
                 {isCurrent && (
                   <span className="text-xs bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 px-2 py-0.5 rounded-full font-medium">
                     {fa ? "این ماه" : "Now"}

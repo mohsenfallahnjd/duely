@@ -146,7 +146,7 @@ function CalendarInner({ loans, allPayments: initialPayments }: { loans: Loan[];
   const rows = Math.ceil(totalCells / 7);
 
   return (
-    <div className={`min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 ${fa ? "font-[vazirmatn,sans-serif]" : ""}`} dir={fa ? "rtl" : "ltr"}>
+    <div className={`min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 ${fa ? "font-[family-name:var(--font-vazirmatn)]" : ""}`} dir={fa ? "rtl" : "ltr"}>
       {/* Header */}
       <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
