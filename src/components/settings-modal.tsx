@@ -31,15 +31,19 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   const subInactive = "text-xs mt-0.5 text-zinc-400 dark:text-zinc-500";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 sticky top-0 bg-white dark:bg-zinc-900">
+    <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <div className="relative w-full max-w-lg mx-auto bg-white dark:bg-zinc-900 rounded-t-3xl shadow-2xl max-h-[90dvh] flex flex-col sheet-enter" onClick={e => e.stopPropagation()}>
+        <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+          <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-600" />
+        </div>
+        <div className="flex items-center justify-between px-6 py-3 border-b border-zinc-100 dark:border-zinc-800 flex-shrink-0">
           <h2 className="font-semibold text-zinc-900 dark:text-white">{fa ? "تنظیمات" : "Settings"}</h2>
           <button onClick={onClose} className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
             <X className="w-4 h-4" />
           </button>
         </div>
-
+        <div className="overflow-y-auto flex-1">
         <div className="p-6 space-y-6">
           {/* Language */}
           <div>
@@ -96,6 +100,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
               ))}
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

@@ -3,9 +3,9 @@ import { redirect } from "next/navigation";
 import { requireDb } from "@/db";
 import { loans, payments } from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
-import { Dashboard } from "@/components/dashboard";
+import { CalendarView } from "@/components/calendar-view";
 
-export default async function Home() {
+export default async function CalendarPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
@@ -23,5 +23,5 @@ export default async function Home() {
     ? await db.select().from(payments).where(inArray(payments.loanId, loanIds))
     : [];
 
-  return <Dashboard loans={userLoans} allPayments={allPayments} />;
+  return <CalendarView loans={userLoans} allPayments={allPayments} />;
 }
