@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Trash2, Check } from "lucide-react";
+import { ExternalLink, Trash2, Check, Pencil } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useCalendar } from "./calendar-context";
 import { formatDueDay } from "@/lib/calendar";
+import { EditLoanModal } from "./edit-loan-modal";
 
 type Loan = {
   id: string;
@@ -17,7 +18,7 @@ type Loan = {
   payment: { id: string; paid: boolean; paidAt: Date | null } | null;
 };
 
-export function LoanCard({ loan, year, month, onToggle, onDelete }: {
+export function LoanCard({ loan: initialLoan, year, month, onToggle, onDelete }: {
   loan: Loan;
   year: number;
   month: number;
@@ -25,8 +26,22 @@ export function LoanCard({ loan, year, month, onToggle, onDelete }: {
   onDelete: (id: string) => Promise<void>;
 }) {
   const { cal } = useCalendar();
+  const [loan, setLoan] = useState(initialLoan);
   const [loading, setLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+
+  async function handleSave(id: string, data: Partial<Loan>) {
+    const res = await fetch(`/api/loans/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return;
+    const updated = await res.json();
+    setLoan((prev) => ({ ...prev, ...updated }));
+    setShowEdit(false);
+  }
   const paid = loan.payment?.paid ?? false;
 
   const now = new Date();
@@ -123,14 +138,26 @@ export function LoanCard({ loan, year, month, onToggle, onDelete }: {
             </button>
           </div>
         ) : (
-          <button
-            onClick={() => setConfirmDelete(true)}
-            className="p-1.5 text-zinc-300 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 rounded-lg transition"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setShowEdit(true)}
+              className="p-1.5 text-zinc-300 dark:text-zinc-600 hover:text-zinc-900 dark:hover:text-white rounded-lg transition"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => setConfirmDelete(true)}
+              className="p-1.5 text-zinc-300 dark:text-zinc-600 hover:text-red-500 dark:hover:text-red-400 rounded-lg transition"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
         )}
       </div>
+
+      {showEdit && (
+        <EditLoanModal loan={loan} onClose={() => setShowEdit(false)} onSave={handleSave} />
+      )}
     </div>
   );
 }

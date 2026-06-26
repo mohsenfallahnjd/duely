@@ -30,6 +30,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       currency: body.currency ? String(body.currency) : undefined,
       dueDay: body.dueDay ? Number(body.dueDay) : undefined,
       paymentUrl: body.paymentUrl !== undefined ? (body.paymentUrl ? String(body.paymentUrl).trim() : null) : undefined,
+      installments: body.installments !== undefined ? (body.installments ? Number(body.installments) : null) : undefined,
     })
     .where(and(eq(loans.id, id), eq(loans.userId, session.user.id)))
     .returning();
