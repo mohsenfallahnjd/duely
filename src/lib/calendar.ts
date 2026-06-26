@@ -12,13 +12,20 @@ export const JALALI_MONTHS = ["فروردین","اردیبهشت","خرداد","
 export function toJalali(gYear: number, gMonth: number, gDay = 15) {
   const d = new DateObject({ year: gYear, month: gMonth, day: gDay, calendar: gregorian, locale: gregorian_en });
   d.convert(persian, persian_fa);
-  return { year: d.year as unknown as number, month: d.month as unknown as number, day: d.day as unknown as number, monthName: JALALI_MONTHS[(d.month as unknown as number) - 1] };
+  const month = +(d.month as unknown as { valueOf(): number });
+  const year = +(d.year as unknown as { valueOf(): number });
+  const day = +(d.day as unknown as { valueOf(): number });
+  return { year, month, day, monthName: JALALI_MONTHS[month - 1] };
 }
 
 export function fromJalali(jYear: number, jMonth: number, jDay = 1) {
   const d = new DateObject({ year: jYear, month: jMonth, day: jDay, calendar: persian, locale: persian_fa });
   d.convert(gregorian, gregorian_en);
-  return { year: d.year as unknown as number, month: d.month as unknown as number, day: d.day as unknown as number };
+  return {
+    year: +(d.year as unknown as { valueOf(): number }),
+    month: +(d.month as unknown as { valueOf(): number }),
+    day: +(d.day as unknown as { valueOf(): number }),
+  };
 }
 
 // Installment row label — use day=15 (midpoint) for stable Jalali month mapping
