@@ -28,6 +28,8 @@ export const loans = pgTable("loans", {
   dueDay: integer("due_day").notNull(),
   paymentUrl: text("payment_url"),
   installments: integer("installments"),
+  startYear: integer("start_year").notNull().default(2024),
+  startMonth: integer("start_month").notNull().default(1),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

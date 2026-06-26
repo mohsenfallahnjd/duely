@@ -19,6 +19,8 @@ type Loan = {
   dueDay: number;
   paymentUrl: string | null;
   installments: number | null;
+  startYear: number;
+  startMonth: number;
   active: boolean;
   payment: { id: string; paid: boolean; paidAt: Date | null } | null;
 };
@@ -67,7 +69,7 @@ function DashboardInner({ loans: initialLoans, currentYear, currentMonth }: {
     setLoans(prev => prev.map(l => l.id === loanId ? { ...l, payment } : l));
   }
 
-  async function addLoan(data: { name: string; amount: number; currency: string; dueDay: number; paymentUrl: string }) {
+  async function addLoan(data: { name: string; amount: number; currency: string; dueDay: number; paymentUrl: string; installments: number | null; startYear: number; startMonth: number }) {
     const res = await fetch("/api/loans", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -84,7 +86,11 @@ function DashboardInner({ loans: initialLoans, currentYear, currentMonth }: {
     setLoans(prev => prev.filter(l => l.id !== id));
   }
 
-  const paidCount = loans.filter(l => l.payment?.paid).length;
+  // only show loans that have started by the displayed month
+  const visibleLoans = loans.filter(l =>
+    l.startYear < year || (l.startYear === year && l.startMonth <= month)
+  );
+  const paidCount = visibleLoans.filter(l => l.payment?.paid).length;
   const isCurrent = isCurrentMonth(year, month, cal);
 
   return (
@@ -138,12 +144,12 @@ function DashboardInner({ loans: initialLoans, currentYear, currentMonth }: {
           </button>
         </div>
 
-        {loans.length > 0 && (
+        {visibleLoans.length > 0 && (
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: cal === "jalali" ? "وام‌ها" : "Loans", value: loans.length, color: "" },
-              { label: cal === "jalali" ? "پرداخت شده" : "Paid", value: paidCount, color: "" },
-              { label: cal === "jalali" ? "باقی‌مانده" : "Remaining", value: loans.length - paidCount, color: "" },
+              { label: cal === "jalali" ? "وام‌ها" : "Loans", value: visibleLoans.length },
+              { label: cal === "jalali" ? "پرداخت شده" : "Paid", value: paidCount },
+              { label: cal === "jalali" ? "باقی‌مانده" : "Remaining", value: visibleLoans.length - paidCount },
             ].map(({ label, value }) => (
               <div key={label} className="rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4">
                 <div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium uppercase tracking-wide mb-1">{label}</div>
@@ -154,7 +160,7 @@ function DashboardInner({ loans: initialLoans, currentYear, currentMonth }: {
         )}
 
         <div className="flex flex-col gap-3">
-          {loans.length === 0 ? (
+          {visibleLoans.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-4">
                 <span className="text-3xl">📋</span>
@@ -167,7 +173,7 @@ function DashboardInner({ loans: initialLoans, currentYear, currentMonth }: {
               </p>
             </div>
           ) : (
-            loans.map(loan => (
+            visibleLoans.map(loan => (
               <LoanCard
                 key={loan.id}
                 loan={loan}

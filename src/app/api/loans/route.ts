@@ -35,6 +35,8 @@ export async function POST(req: Request) {
       dueDay: Number(dueDay),
       paymentUrl: paymentUrl ? String(paymentUrl).trim() : null,
       installments: body.installments ? Number(body.installments) : null,
+      startYear: body.startYear ? Number(body.startYear) : new Date().getFullYear(),
+      startMonth: body.startMonth ? Number(body.startMonth) : new Date().getMonth() + 1,
     })
     .returning();
   return NextResponse.json(row, { status: 201 });
