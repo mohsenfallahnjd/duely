@@ -94,7 +94,7 @@ export function EditLoanModal({ loan, onClose, onSave }: {
     setLoading(false);
   }
 
-  const inputCls = "mt-1.5 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-zinc-900 dark:text-white placeholder-zinc-400 outline-none focus:border-zinc-900 dark:focus:border-white transition text-sm";
+  const inputCls = "mt-1.5 w-full rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 px-4 py-3 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-600 outline-none focus:border-zinc-900 dark:focus:border-white transition text-sm";
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
@@ -104,7 +104,7 @@ export function EditLoanModal({ loan, onClose, onSave }: {
           <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-600" />
         </div>
         <div className="flex items-center justify-between px-6 py-3 border-b border-zinc-100 dark:border-zinc-800 flex-shrink-0">
-          <h2 className="font-semibold text-zinc-900 dark:text-white">{fa ? "ویرایش وام" : "Edit loan"}</h2>
+          <h2 className="font-semibold text-zinc-900 dark:text-white">{fa ? "ویرایش" : "Edit payment"}</h2>
           <button onClick={onClose} className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
             <X className="w-4 h-4" />
           </button>

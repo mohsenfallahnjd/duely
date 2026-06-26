@@ -280,7 +280,7 @@ function DashboardInner({
 					{/* Wordmark + date/time */}
 					<div className="flex-1 min-w-0 flex flex-col">
 						<span className="text-lg font-black tracking-[-0.04em] text-zinc-900 dark:text-white leading-none">
-							Duely
+							qist
 						</span>
 						<span className="text-[10px] text-zinc-400 dark:text-zinc-500 tabular-nums mt-2	 leading-none">
 							{todayLabel}
@@ -313,24 +313,7 @@ function DashboardInner({
 							))}
 						</div>
 					)}
-
-					{/* Actions */}
-					<div className="flex items-center gap-0.5 shrink-0">
-						<Link
-							href="/calendar"
-							className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white rounded-lg transition"
-						>
-							<CalendarDays className="w-4 h-4" />
-						</Link>
-						<button
-							type="button"
-							onClick={() => setShowSettings(true)}
-							className="p-2 text-zinc-400 hover:text-zinc-900 dark:hover:text-white rounded-lg transition"
-						>
-							<Settings className="w-4 h-4" />
-						</button>
 					</div>
-				</div>
 
 				{/* Current month summary strip */}
 				{loans.length > 0 && Object.keys(currentMonthSummary).length > 0 && (
@@ -384,18 +367,28 @@ function DashboardInner({
 				)}
 			</header>
 
-			<main className="max-w-2xl mx-auto w-full px-4 py-5 pb-24 flex flex-col gap-3 flex-1">
+			<main className="max-w-2xl mx-auto w-full px-4 py-5 pb-32 flex flex-col gap-3 flex-1">
 				{loans.length === 0 ? (
-					<div className="flex flex-col items-center justify-center py-24 text-center">
-						<div className="w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-4">
-							<span className="text-3xl">📋</span>
+					<div className="flex flex-col items-center justify-center py-16 text-center px-6">
+						<div className="w-20 h-20 rounded-3xl bg-zinc-100 dark:bg-zinc-900 ring-1 ring-zinc-200 dark:ring-zinc-800 flex items-center justify-center mb-6">
+							<span className="text-4xl">💳</span>
 						</div>
-						<p className="text-zinc-600 dark:text-zinc-400 font-medium">
-							{fa ? "وامی ثبت نشده" : "No loans yet"}
+						<h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">
+							{fa ? "هنوز وامی ثبت نشده" : "No loans yet"}
+						</h3>
+						<p className="text-sm text-zinc-400 dark:text-zinc-500 max-w-xs leading-relaxed mb-8">
+							{fa
+								? "وام، اقساط، یا هر پرداخت ماهانه‌ای را اضافه کنید تا دیگر فراموش نکنید"
+								: "Add a loan, installment, or any recurring payment to start tracking"}
 						</p>
-						<p className="text-sm text-zinc-400 dark:text-zinc-500 mt-1">
-							{fa ? "اولین وام خود را اضافه کنید" : "Add your first loan below"}
-						</p>
+						<button
+							type="button"
+							onClick={() => setShowAdd(true)}
+							className="flex items-center gap-2 px-6 py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl text-sm font-semibold hover:bg-zinc-700 dark:hover:bg-zinc-200 transition"
+						>
+							<Plus className="w-4 h-4" />
+							{fa ? "افزودن اولین وام" : "Add your first loan"}
+						</button>
 					</div>
 				) : viewMode === "by-loan" ? (
 					loans.map((loan) => (
@@ -423,14 +416,42 @@ function DashboardInner({
 				)}
 			</main>
 
-			<button
-				type="button"
-				onClick={() => setShowAdd(true)}
-				className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-xl hover:scale-105 active:scale-95 transition-transform flex items-center justify-center"
-				title={fa ? "افزودن وام" : "Add loan"}
-			>
-				<Plus className="w-6 h-6" />
-			</button>
+			{/* Bottom nav */}
+			<div className="fixed bottom-0 inset-x-0 z-40 bg-white/90 dark:bg-zinc-950/90 backdrop-blur border-t border-zinc-100 dark:border-zinc-800">
+				<div className="w-full grid grid-cols-4 h-16">
+					<Link
+						href="/dashboard"
+						className="flex flex-col items-center justify-center gap-1 text-zinc-900 dark:text-white"
+					>
+						<Rows3 className="w-5 h-5" />
+						<span className="text-[10px] font-medium">{fa ? "خانه" : "Home"}</span>
+					</Link>
+					<Link
+						href="/calendar"
+						className="flex flex-col items-center justify-center gap-1 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition"
+					>
+						<CalendarDays className="w-5 h-5" />
+						<span className="text-[10px] font-medium">{fa ? "تقویم" : "Calendar"}</span>
+					</Link>
+					<button
+						type="button"
+						onClick={() => setShowAdd(true)}
+						className="flex items-center justify-center"
+					>
+						<div className="w-12 h-12 rounded-2xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-lg hover:scale-105 active:scale-95 transition-transform flex items-center justify-center -mt-5">
+							<Plus className="w-5 h-5" />
+						</div>
+					</button>
+					<button
+						type="button"
+						onClick={() => setShowSettings(true)}
+						className="flex flex-col items-center justify-center gap-1 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition"
+					>
+						<Settings className="w-5 h-5" />
+						<span className="text-[10px] font-medium">{fa ? "تنظیمات" : "Settings"}</span>
+					</button>
+				</div>
+			</div>
 
 			{showAdd && (
 				<AddLoanModal onClose={() => setShowAdd(false)} onAdd={addLoan} />

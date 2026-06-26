@@ -1,5 +1,5 @@
 /* global caches, fetch, self */
-const CACHE = "duely-v1";
+const CACHE = "qist-v1";
 
 const PRECACHE = ["/", "/login", "/register", "/manifest.webmanifest", "/icon.svg"];
 
@@ -14,7 +14,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE && k.startsWith("duely-")).map((k) => caches.delete(k)))
+      Promise.all(keys.filter((k) => k !== CACHE && k.startsWith("qist-")).map((k) => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
@@ -23,11 +23,11 @@ self.addEventListener("push", (event) => {
   if (!event.data) return;
   const data = event.data.json();
   event.waitUntil(
-    self.registration.showNotification(data.title || "Duely", {
+    self.registration.showNotification(data.title || "Qist", {
       body: data.body || "",
       icon: "/icon.svg",
       badge: "/icon.svg",
-      tag: "duely-reminder",
+      tag: "qist-reminder",
     })
   );
 });

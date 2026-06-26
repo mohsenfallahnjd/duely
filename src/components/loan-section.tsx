@@ -107,10 +107,14 @@ export function LoanSection({
 		({ year, month }) => getPayment(loan.id, year, month)?.paid,
 	).length;
 
+	const totalCount = months.length;
+	const progressPct = totalCount > 0 ? (paidCount / totalCount) * 100 : 0;
+	const allDone = totalCount > 0 && paidCount === totalCount;
+
 	return (
-		<div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden">
+		<div className="rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-zinc-100 dark:ring-zinc-800 overflow-hidden">
 			{/* Loan header */}
-			<div className="flex items-start justify-between px-4 py-3.5 gap-3">
+			<div className="flex items-start justify-between px-4 pt-3.5 pb-3 gap-3">
 				<Link
 					href={`/loans/${loan.id}`}
 					className="min-w-0 flex-1 hover:opacity-75 transition"
@@ -185,6 +189,21 @@ export function LoanSection({
 					)}
 				</div>
 			</div>
+
+			{/* Progress bar */}
+			{loan.installments && (
+				<div className="px-4 pb-3">
+					<div className="h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+						<div
+							className={cn(
+								"h-full rounded-full transition-[width] duration-500",
+								allDone ? "bg-emerald-500 dark:bg-emerald-400" : "bg-zinc-400 dark:bg-zinc-500",
+							)}
+							style={{ width: `${progressPct}%` }}
+						/>
+					</div>
+				</div>
+			)}
 
 			{/* Installment rows */}
 			{!collapsed && (

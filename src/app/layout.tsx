@@ -13,10 +13,10 @@ const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono"
 const vazirmatn = Vazirmatn({ subsets: ["arabic"], variable: "--font-vazirmatn" });
 
 export const metadata: Metadata = {
-  applicationName: "Duely",
-  title: { default: "Duely", template: "%s · Duely" },
+  applicationName: "Qist",
+  title: { default: "Qist", template: "%s · Qist" },
   description: "Track and pay your monthly loans on time.",
-  appleWebApp: { capable: true, title: "Duely", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "Qist", statusBarStyle: "default" },
   formatDetection: { telephone: false },
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],

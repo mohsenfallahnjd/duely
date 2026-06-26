@@ -59,7 +59,7 @@ export async function GET(req: Request) {
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          JSON.stringify({ title: "Duely — Payment Due", body }),
+          JSON.stringify({ title: "Qist — Payment Due", body }),
         );
         sent++;
       } catch { /* expired sub — ignore */ }

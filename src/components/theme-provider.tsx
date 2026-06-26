@@ -10,7 +10,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       enableSystem={false}
       disableTransitionOnChange
       themes={["dark", "light"]}
-      storageKey="duely-theme"
+      storageKey="qist-theme"
     >
       {children}
     </NextThemesProvider>

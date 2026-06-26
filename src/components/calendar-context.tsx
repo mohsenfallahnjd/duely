@@ -26,11 +26,11 @@ export function CalendarProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const c = localStorage.getItem("duely-calendar") as CalendarType | null;
+    const c = localStorage.getItem("qist-calendar") as CalendarType | null;
     if (c === "jalali" || c === "gregorian") setCal(c);
-    const l = localStorage.getItem("duely-lang") as Lang | null;
+    const l = localStorage.getItem("qist-lang") as Lang | null;
     if (l === "en" || l === "fa") setLang(l);
-    const cur = localStorage.getItem("duely-currency");
+    const cur = localStorage.getItem("qist-currency");
     if (cur) setCurrency(cur);
     setMounted(true);
   }, []);
@@ -40,9 +40,9 @@ export function CalendarProvider({ children }: { children: React.ReactNode }) {
   return (
     <CalendarContext.Provider value={{
       cal, lang, currency,
-      setCal: (c) => { setCal(c); localStorage.setItem("duely-calendar", c); },
-      setLang: (l) => { setLang(l); localStorage.setItem("duely-lang", l); },
-      setCurrency: (c) => { setCurrency(c); localStorage.setItem("duely-currency", c); },
+      setCal: (c) => { setCal(c); localStorage.setItem("qist-calendar", c); },
+      setLang: (l) => { setLang(l); localStorage.setItem("qist-lang", l); },
+      setCurrency: (c) => { setCurrency(c); localStorage.setItem("qist-currency", c); },
     }}>
       {children}
     </CalendarContext.Provider>
