@@ -29,8 +29,8 @@ export function EditLoanModal({ loan, onClose, onSave }: {
   onClose: () => void;
   onSave: (id: string, data: Partial<Loan>) => Promise<void>;
 }) {
-  const { cal } = useCalendar();
-  const fa = cal === "jalali";
+  const { cal, lang } = useCalendar();
+  const fa = lang === "fa";
   const [name, setName] = useState(loan.name);
   const [amountDisplay, setAmountDisplay] = useState(loan.amount.toLocaleString());
   const [currency, setCurrency] = useState(loan.currency);

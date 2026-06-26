@@ -25,7 +25,7 @@ export function LoanCard({ loan: initialLoan, year, month, onToggle, onDelete }:
   onToggle: (id: string, paid: boolean) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
 }) {
-  const { cal } = useCalendar();
+  const { cal, lang } = useCalendar();
   const [loan, setLoan] = useState(initialLoan);
   const [loading, setLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -89,16 +89,16 @@ export function LoanCard({ loan: initialLoan, year, month, onToggle, onDelete }:
             <span className={cn(
               "text-xs",
               isOverdue && !paid ? "text-red-500 dark:text-red-400 font-medium" : "text-zinc-400 dark:text-zinc-500",
-              cal === "jalali" && "font-[vazirmatn,sans-serif]"
+              lang === "fa" && "font-[vazirmatn,sans-serif]"
             )}>
-              {isOverdue && !paid ? (cal === "jalali" ? "تاخیر · " : "Overdue · ") : ""}
+              {isOverdue && !paid ? (lang === "fa" ? "تاخیر · " : "Overdue · ") : ""}
               {formatDueDay(loan.dueDay, cal)}
             </span>
           </div>
 
           {loan.installments && (
             <div className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
-              {cal === "jalali"
+              {lang === "fa"
                 ? `${loan.installments} قسط`
                 : `${loan.installments} installments`}
             </div>
@@ -106,8 +106,8 @@ export function LoanCard({ loan: initialLoan, year, month, onToggle, onDelete }:
 
           {paid && loan.payment?.paidAt && (
             <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
-              {cal === "jalali" ? "پرداخت شد" : "Paid"}{" "}
-              {new Date(loan.payment.paidAt).toLocaleDateString(cal === "jalali" ? "fa-IR" : undefined, { month: "short", day: "numeric" })}
+              {lang === "fa" ? "پرداخت شد" : "Paid"}{" "}
+              {new Date(loan.payment.paidAt).toLocaleDateString(lang === "fa" ? "fa-IR" : undefined, { month: "short", day: "numeric" })}
             </div>
           )}
         </div>
@@ -123,18 +123,18 @@ export function LoanCard({ loan: initialLoan, year, month, onToggle, onDelete }:
               className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-900 dark:text-white hover:underline"
             >
               <ExternalLink className="w-3 h-3" />
-              {cal === "jalali" ? "پرداخت" : "Pay now"}
+              {lang === "fa" ? "پرداخت" : "Pay now"}
             </a>
           )}
         </div>
         {confirmDelete ? (
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-zinc-500">{cal === "jalali" ? "حذف؟" : "Delete?"}</span>
+            <span className="text-zinc-500">{lang === "fa" ? "حذف؟" : "Delete?"}</span>
             <button onClick={() => void onDelete(loan.id)} className="text-red-500 font-medium hover:underline">
-              {cal === "jalali" ? "بله" : "Yes"}
+              {lang === "fa" ? "بله" : "Yes"}
             </button>
             <button onClick={() => setConfirmDelete(false)} className="text-zinc-400 hover:underline">
-              {cal === "jalali" ? "خیر" : "No"}
+              {lang === "fa" ? "خیر" : "No"}
             </button>
           </div>
         ) : (

@@ -25,8 +25,8 @@ export function AddLoanModal({ onClose, onAdd }: {
     startYear: number; startMonth: number;
   }) => Promise<void>;
 }) {
-  const { cal, currency: defaultCurrency } = useCalendar();
-  const fa = cal === "jalali";
+  const { cal, lang, currency: defaultCurrency } = useCalendar();
+  const fa = lang === "fa";
 
   const now = new Date();
   const gYear = now.getFullYear();

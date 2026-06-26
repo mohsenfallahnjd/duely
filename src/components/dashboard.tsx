@@ -42,7 +42,7 @@ function DashboardInner({ loans: initialLoans, currentYear, currentMonth }: {
   currentYear: number;
   currentMonth: number;
 }) {
-  const { cal } = useCalendar();
+  const { cal, lang } = useCalendar();
   const [year, setYear] = useState(currentYear);
   const [month, setMonth] = useState(currentMonth);
   const [loans, setLoans] = useState(initialLoans);
@@ -130,12 +130,12 @@ function DashboardInner({ loans: initialLoans, currentYear, currentMonth }: {
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div className="text-center">
-            <div className={`font-semibold text-lg text-zinc-900 dark:text-white ${cal === "jalali" ? "font-[vazirmatn,sans-serif]" : ""}`}>
+            <div className={`font-semibold text-lg text-zinc-900 dark:text-white ${lang === "fa" ? "font-[vazirmatn,sans-serif]" : ""}`}>
               {getMonthLabel(year, month, cal)}
             </div>
             {isCurrent && (
               <div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-                {cal === "jalali" ? "ماه جاری" : "This month"}
+                {lang === "fa" ? "ماه جاری" : "This month"}
               </div>
             )}
           </div>
@@ -147,9 +147,9 @@ function DashboardInner({ loans: initialLoans, currentYear, currentMonth }: {
         {visibleLoans.length > 0 && (
           <div className="grid grid-cols-3 gap-3">
             {[
-              { label: cal === "jalali" ? "وام‌ها" : "Loans", value: visibleLoans.length },
-              { label: cal === "jalali" ? "پرداخت شده" : "Paid", value: paidCount },
-              { label: cal === "jalali" ? "باقی‌مانده" : "Remaining", value: visibleLoans.length - paidCount },
+              { label: lang === "fa" ? "وام‌ها" : "Loans", value: visibleLoans.length },
+              { label: lang === "fa" ? "پرداخت شده" : "Paid", value: paidCount },
+              { label: lang === "fa" ? "باقی‌مانده" : "Remaining", value: visibleLoans.length - paidCount },
             ].map(({ label, value }) => (
               <div key={label} className="rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-4">
                 <div className="text-xs text-zinc-500 dark:text-zinc-400 font-medium uppercase tracking-wide mb-1">{label}</div>
@@ -166,10 +166,10 @@ function DashboardInner({ loans: initialLoans, currentYear, currentMonth }: {
                 <span className="text-3xl">📋</span>
               </div>
               <p className="text-zinc-600 dark:text-zinc-400 font-medium">
-                {cal === "jalali" ? "وامی ثبت نشده" : "No loans yet"}
+                {lang === "fa" ? "وامی ثبت نشده" : "No loans yet"}
               </p>
               <p className="text-sm text-zinc-400 dark:text-zinc-500 mt-1">
-                {cal === "jalali" ? "اولین وام خود را اضافه کنید" : "Add your first loan to get started"}
+                {lang === "fa" ? "اولین وام خود را اضافه کنید" : "Add your first loan to get started"}
               </p>
             </div>
           ) : (
@@ -191,7 +191,7 @@ function DashboardInner({ loans: initialLoans, currentYear, currentMonth }: {
           className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 py-4 text-zinc-500 dark:text-zinc-400 hover:border-zinc-900 dark:hover:border-white hover:text-zinc-900 dark:hover:text-white transition font-medium"
         >
           <Plus className="w-4 h-4" />
-          {cal === "jalali" ? "افزودن وام" : "Add loan"}
+          {lang === "fa" ? "افزودن وام" : "Add loan"}
         </button>
       </main>
 
