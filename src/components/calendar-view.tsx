@@ -91,16 +91,12 @@ function CalendarInner({ loans, allPayments: initialPayments }: { loans: Loan[];
   const offset = getMonthStartOffset(dispYear, dispMonth, cal);
   const weekDays = cal === "jalali" ? JALALI_WEEK_DAYS : GREGORIAN_WEEK_DAYS;
 
-  // Convert a display-calendar day to Gregorian
-  function toGregorian(day: number): { gYear: number; gMonth: number; gDay: number } {
-    if (cal === "jalali") {
-      const g = fromJalali(dispYear, dispMonth, day);
-      return { gYear: g.year, gMonth: g.month, gDay: g.day };
-    }
-    return { gYear: dispYear, gMonth: dispMonth, gDay: day };
-  }
+  // Gregorian month that corresponds to the displayed calendar month.
+  // Uses day=15 midpoint — consistent with getInstallmentLabel and fromJalali storage.
+  const { year: dispGYear, month: dispGMonth } = cal === "jalali"
+    ? fromJalali(dispYear, dispMonth, 15)
+    : { year: dispYear, month: dispMonth };
 
-  // Check if a loan is active for a given Gregorian month
   function loanActiveForGMonth(loan: Loan, gYear: number, gMonth: number): boolean {
     const startTotal = loan.startYear * 12 + loan.startMonth - 1;
     const curTotal = gYear * 12 + gMonth - 1;
@@ -112,25 +108,21 @@ function CalendarInner({ loans, allPayments: initialPayments }: { loans: Loan[];
     return true;
   }
 
-  // day is in display-calendar coordinates; dueDay stored as same-calendar day number
+  // Dot appears on dueDay (display-calendar coordinates).
+  // Payment keyed by the midpoint-derived Gregorian month (consistent with storage).
   function loansDueOnDay(day: number): Array<{ loan: Loan; paid: boolean }> {
-    const { gYear, gMonth } = toGregorian(day);
     return loans
-      .filter(l => l.dueDay === day && loanActiveForGMonth(l, gYear, gMonth))
+      .filter(l => l.dueDay === day && loanActiveForGMonth(l, dispGYear, dispGMonth))
       .map(l => {
         const payment = allPayments.find(
-          p => p.loanId === l.id && p.year === gYear && p.month === gMonth
+          p => p.loanId === l.id && p.year === dispGYear && p.month === dispGMonth
         );
         return { loan: l, paid: payment?.paid ?? false };
       });
   }
 
-  // Loans visible this displayed month (for list below)
-  const visibleLoans = loans.filter(l => {
-    // At least one day of the displayed month must be active for this loan
-    const { gYear, gMonth } = toGregorian(15); // midpoint day for month check
-    return loanActiveForGMonth(l, gYear, gMonth);
-  });
+  // Loans visible this displayed month
+  const visibleLoans = loans.filter(l => loanActiveForGMonth(l, dispGYear, dispGMonth));
 
   // Today's day number in current calendar
   const todayDispDay = (() => {
@@ -228,8 +220,7 @@ function CalendarInner({ loans, allPayments: initialPayments }: { loans: Loan[];
             </h3>
             <div className="flex flex-col gap-2">
               {visibleLoans.map(l => {
-                const { gYear, gMonth } = toGregorian(l.dueDay > numDays ? numDays : l.dueDay);
-                const payment = allPayments.find(p => p.loanId === l.id && p.year === gYear && p.month === gMonth);
+                const payment = allPayments.find(p => p.loanId === l.id && p.year === dispGYear && p.month === dispGMonth);
                 const paid = payment?.paid ?? false;
                 return (
                   <div key={l.id} className={cn(
