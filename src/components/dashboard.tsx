@@ -18,6 +18,7 @@ type Loan = {
   currency: string;
   dueDay: number;
   paymentUrl: string | null;
+  installments: number | null;
   active: boolean;
   payment: { id: string; paid: boolean; paidAt: Date | null } | null;
 };

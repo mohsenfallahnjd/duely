@@ -34,6 +34,7 @@ export async function POST(req: Request) {
       currency: String(currency || "USD"),
       dueDay: Number(dueDay),
       paymentUrl: paymentUrl ? String(paymentUrl).trim() : null,
+      installments: body.installments ? Number(body.installments) : null,
     })
     .returning();
   return NextResponse.json(row, { status: 201 });

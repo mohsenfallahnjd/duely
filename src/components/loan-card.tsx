@@ -13,6 +13,7 @@ type Loan = {
   currency: string;
   dueDay: number;
   paymentUrl: string | null;
+  installments: number | null;
   payment: { id: string; paid: boolean; paidAt: Date | null } | null;
 };
 
@@ -79,6 +80,14 @@ export function LoanCard({ loan, year, month, onToggle, onDelete }: {
               {formatDueDay(loan.dueDay, cal)}
             </span>
           </div>
+
+          {loan.installments && (
+            <div className="text-xs text-zinc-400 dark:text-zinc-500 mt-0.5">
+              {cal === "jalali"
+                ? `${loan.installments} قسط`
+                : `${loan.installments} installments`}
+            </div>
+          )}
 
           {paid && loan.payment?.paidAt && (
             <div className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">

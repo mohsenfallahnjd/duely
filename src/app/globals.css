@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 :root {
   --font-geist: "Geist", sans-serif;
   --font-geist-mono: "Geist Mono", monospace;

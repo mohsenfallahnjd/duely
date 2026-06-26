@@ -27,6 +27,7 @@ export const loans = pgTable("loans", {
   currency: text("currency").notNull().default("USD"),
   dueDay: integer("due_day").notNull(),
   paymentUrl: text("payment_url"),
+  installments: integer("installments"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
