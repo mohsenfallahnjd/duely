@@ -1,4 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" rx="8" fill="#6366f1"/>
-  <text x="16" y="22" font-family="system-ui,sans-serif" font-size="18" font-weight="700" fill="white" text-anchor="middle">D</text>
+  <rect width="32" height="32" rx="7" fill="#09090b"/>
+  <!-- coin bottom -->
+  <ellipse cx="16" cy="24" rx="8.5" ry="2.8" fill="none" stroke="white" stroke-width="1.6"/>
+  <rect x="7.5" y="21.2" width="17" height="2.8" fill="#09090b"/>
+  <line x1="7.5" y1="21.2" x2="7.5" y2="24" stroke="white" stroke-width="1.6"/>
+  <line x1="24.5" y1="21.2" x2="24.5" y2="24" stroke="white" stroke-width="1.6"/>
+  <!-- coin mid -->
+  <ellipse cx="16" cy="20" rx="8.5" ry="2.8" fill="none" stroke="white" stroke-width="1.6"/>
+  <rect x="7.5" y="17.2" width="17" height="2.8" fill="#09090b"/>
+  <line x1="7.5" y1="17.2" x2="7.5" y2="20" stroke="white" stroke-width="1.6"/>
+  <line x1="24.5" y1="17.2" x2="24.5" y2="20" stroke="white" stroke-width="1.6"/>
+  <!-- coin top -->
+  <ellipse cx="16" cy="16" rx="8.5" ry="2.8" fill="#09090b" stroke="white" stroke-width="1.6"/>
 </svg>
