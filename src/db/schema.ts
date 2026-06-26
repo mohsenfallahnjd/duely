@@ -1,54 +1,59 @@
 import {
-  date,
+  boolean,
   doublePrecision,
+  integer,
   pgTable,
   text,
   timestamp,
+  unique,
   uuid,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
+  name: text("name"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const contacts = pgTable("contacts", {
+export const loans = pgTable("loans", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
-  accent: text("accent").notNull(),
-  phone: text("phone"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
+  amount: doublePrecision("amount").notNull(),
+  currency: text("currency").notNull().default("USD"),
+  dueDay: integer("due_day").notNull(),
+  paymentUrl: text("payment_url"),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const entries = pgTable("entries", {
+export const payments = pgTable(
+  "payments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    loanId: uuid("loan_id")
+      .notNull()
+      .references(() => loans.id, { onDelete: "cascade" }),
+    year: integer("year").notNull(),
+    month: integer("month").notNull(),
+    paid: boolean("paid").notNull().default(false),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique("payments_loan_month_uniq").on(t.loanId, t.year, t.month)],
+);
+
+export const pushSubscriptions = pgTable("push_subscriptions", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  kind: text("kind").notNull(),
-  title: text("title").notNull(),
-  amount: doublePrecision("amount").notNull(),
-  progressAmount: doublePrecision("progress_amount").notNull().default(0),
-  contactId: uuid("contact_id").references(() => contacts.id, {
-    onDelete: "set null",
-  }),
-  tags: text("tags")
-    .array()
-    .notNull()
-    .default(sql`'{}'::text[]`),
-  entryDate: date("entry_date").notNull(),
-  note: text("note").notNull().default(""),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

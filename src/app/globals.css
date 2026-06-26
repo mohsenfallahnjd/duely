@@ -1,97 +1,14 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
-
 :root {
-  --background: #fafafa;
-  --foreground: #171717;
+  --font-geist: "Geist", sans-serif;
+  --font-geist-mono: "Geist Mono", monospace;
 }
 
-.dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-vazir), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono);
+* {
+  font-family: var(--font-geist);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-vazir), ui-sans-serif, system-ui, sans-serif;
-}
-
-@keyframes progress-glow {
-  0%,
-  100% {
-    opacity: 1;
-    filter: brightness(1);
-  }
-  50% {
-    opacity: 0.95;
-    filter: brightness(1.12);
-  }
-}
-
-.progress-shine {
-  animation: progress-glow 2.8s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .progress-shine {
-    animation: none;
-  }
-}
-
-@keyframes ledger-load-indeterminate {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(250%);
-  }
-}
-
-.ledger-load-bar {
-  height: 100%;
-  width: 45%;
-  animation: ledger-load-indeterminate 1.15s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ledger-load-bar {
-    animation: none;
-    width: 100%;
-    opacity: 0.7;
-  }
-}
-
-/* react-multi-date-picker: match app input height */
-.paymay-jalali-picker .rmdp-input {
-  height: auto !important;
-  min-height: 2.5rem;
-}
-
-.dark .rmdp-wrapper {
-  background-color: rgb(24 24 27);
-  color: rgb(250 250 250);
-  border-color: rgb(63 63 70);
-}
-
-.dark .rmdp-day,
-.dark .rmdp-header-values,
-.dark .rmdp-week-day {
-  color: inherit;
-}
-
-.dark .rmdp-day.rmdp-today span {
-  background-color: rgb(79 70 229);
-}
-
-.dark .rmdp-day.rmdp-selected span:not(.highlight) {
-  background-color: rgb(99 102 241);
+  @apply antialiased;
 }

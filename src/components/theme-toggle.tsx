@@ -1,81 +1,20 @@
 "use client";
 
 import { useTheme } from "next-themes";
+import { Sun, Moon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Moon, Sun } from "@/components/icons";
-import { cn } from "@/lib/cn";
 
-export function ThemeToggle({
-  className,
-  variant = "toolbar",
-}: {
-  className?: string;
-  /** "toolbar" = icon button; "segment" = light/dark text buttons */
-  variant?: "toolbar" | "segment";
-}) {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+export function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    const id = window.setTimeout(() => setMounted(true), 0);
-    return () => window.clearTimeout(id);
-  }, []);
-
-  const resolved = (mounted ? resolvedTheme : null) ?? theme ?? "dark";
-
-  if (variant === "segment") {
-    return (
-      <div
-        className={cn(
-          "inline-flex rounded-full border border-zinc-200 bg-zinc-100/80 p-0.5 dark:border-zinc-700 dark:bg-zinc-900/80",
-          className,
-        )}
-        role="group"
-        aria-label="Theme"
-      >
-        <button
-          type="button"
-          onClick={() => setTheme("light")}
-          className={cn(
-            "inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition",
-            resolved === "light"
-              ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-100"
-              : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
-          )}
-        >
-          <Sun className="size-3.5 shrink-0" />
-          Light
-        </button>
-        <button
-          type="button"
-          onClick={() => setTheme("dark")}
-          className={cn(
-            "inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition",
-            resolved === "dark"
-              ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-100"
-              : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
-          )}
-        >
-          <Moon className="size-3.5 shrink-0" />
-          Dark
-        </button>
-      </div>
-    );
-  }
-
-  const isDark = resolved === "dark";
-
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return <div className="w-8 h-8" />;
   return (
     <button
-      type="button"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
-      disabled={!mounted}
-      className={cn(
-        "inline-flex size-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-800 shadow-sm transition hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800",
-        className,
-      )}
-      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+      className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white rounded-lg transition"
     >
-      {isDark ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
+      {resolvedTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
     </button>
   );
 }

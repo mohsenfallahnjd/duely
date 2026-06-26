@@ -1,148 +1,93 @@
 /* global caches, fetch, self */
-/**
- * PayMay offline shell — precache core pages + Next static chunks; replay
- * last successful /api/auth/session when offline so JWT users keep userId → cloud mirror loads.
- */
-const CACHE = "paymay-offline-v1";
+const CACHE = "duely-v1";
 
-/** URLs to warm on install (best-effort; ignored if one fails). */
-const PRECACHE = [
-  "/",
-  "/login",
-  "/register",
-  "/paymay-icon.svg",
-  "/manifest.webmanifest",
-  "/apple-icon",
-];
-
-function sameOrigin(url) {
-  return url.origin === self.location.origin;
-}
-
-function isSessionGet(url) {
-  return (
-    url.pathname === "/api/auth/session" ||
-    url.pathname.startsWith("/api/auth/session/")
-  );
-}
-
-function isNextStatic(url) {
-  return url.pathname.startsWith("/_next/static/");
-}
-
-/** Minimal body if session was never cached (avoids breaking useSession parser). */
-function emptySessionResponse() {
-  return new Response(
-    JSON.stringify({ user: null, expires: null }),
-    {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "private, max-age=0",
-      },
-    },
-  );
-}
-
-async function precacheAll(cache) {
-  await Promise.all(
-    PRECACHE.map((path) =>
-      cache.add(new Request(path, { credentials: "same-origin" })).catch(
-        () => {},
-      ),
-    ),
-  );
-}
+const PRECACHE = ["/", "/login", "/register", "/manifest.webmanifest", "/icon.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches
-      .open(CACHE)
-      .then(precacheAll)
-      .then(() => self.skipWaiting()),
+    caches.open(CACHE).then((cache) =>
+      Promise.all(PRECACHE.map((p) => cache.add(new Request(p, { credentials: "same-origin" })).catch(() => {})))
+    ).then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(
-          keys
-            .filter((k) => k !== CACHE && k.startsWith("paymay-offline-"))
-            .map((k) => caches.delete(k)),
-        ),
-      )
-      .then(() => self.clients.claim()),
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE && k.startsWith("duely-")).map((k) => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+  const data = event.data.json();
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Duely", {
+      body: data.body || "",
+      icon: "/icon.svg",
+      badge: "/icon.svg",
+      tag: "duely-reminder",
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: "window" }).then((clients) => {
+      if (clients.length) return clients[0].focus();
+      return self.clients.openWindow("/");
+    })
   );
 });
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
-
   const url = new URL(request.url);
-  if (!sameOrigin(url)) return;
-
-  // APIs except session: let them fail (ledger uses local mirror + outbox).
-  if (url.pathname.startsWith("/api/") && !isSessionGet(url)) {
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith("/api/")) {
+    if (url.pathname === "/api/auth/session") {
+      event.respondWith(
+        caches.open(CACHE).then(async (cache) => {
+          try {
+            const res = await fetch(request);
+            if (res.ok) await cache.put(request, res.clone());
+            return res;
+          } catch {
+            const hit = await cache.match(request);
+            return hit ?? new Response(JSON.stringify({ user: null, expires: null }), { status: 200, headers: { "Content-Type": "application/json" } });
+          }
+        })
+      );
+    }
     return;
   }
-
-  if (isSessionGet(url)) {
+  if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(
-      (async () => {
-        const c = await caches.open(CACHE);
-        try {
-          const res = await fetch(request);
-          if (res.ok) await c.put(request, res.clone());
-          return res;
-        } catch {
-          const hit = await c.match(request);
-          if (hit) return hit;
-          return emptySessionResponse();
-        }
-      })(),
-    );
-    return;
-  }
-
-  if (isNextStatic(url)) {
-    event.respondWith(
-      (async () => {
-        const c = await caches.open(CACHE);
-        const hit = await c.match(request);
+      caches.open(CACHE).then(async (cache) => {
+        const hit = await cache.match(request);
         if (hit) return hit;
-        try {
-          const res = await fetch(request);
-          if (res.ok) await c.put(request, res.clone());
-          return res;
-        } catch {
-          return hit || new Response("", { status: 504, statusText: "Offline" });
-        }
-      })(),
+        const res = await fetch(request);
+        if (res.ok) await cache.put(request, res.clone());
+        return res;
+      })
     );
     return;
   }
-
   if (request.mode === "navigate") {
     event.respondWith(
-      (async () => {
-        const c = await caches.open(CACHE);
+      caches.open(CACHE).then(async (cache) => {
         try {
           const res = await fetch(request);
-          if (res.ok) await c.put(request, res.clone());
+          if (res.ok) await cache.put(request, res.clone());
           return res;
         } catch {
-          const fallback = await c.match("/");
-          if (fallback) return fallback;
-          return new Response("Offline — open PayMay online once to cache it.", {
-            status: 503,
-            headers: { "Content-Type": "text/plain; charset=utf-8" },
-          });
+          const fallback = await cache.match("/");
+          return fallback ?? new Response("Offline", { status: 503 });
         }
-      })(),
+      })
     );
   }
 });
