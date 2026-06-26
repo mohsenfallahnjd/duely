@@ -1,10 +1,13 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X, LogOut } from "lucide-react";
 import { useCalendar } from "./calendar-context";
 import type { CalendarType } from "@/lib/calendar";
 import type { Lang } from "./calendar-context";
 import { cn } from "@/lib/cn";
+import { NotificationToggle } from "./notification-toggle";
+import { ThemeToggle } from "./theme-toggle";
+import { signOut } from "next-auth/react";
 
 const CURRENCIES = ["USD", "EUR", "GBP", "IRR", "AED", "CAD", "AUD", "TRY", "CNY", "JPY"];
 
@@ -44,63 +47,93 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <div className="overflow-y-auto flex-1">
-        <div className="p-6 space-y-6">
-          {/* Language */}
-          <div>
-            <p className="text-xs font-medium uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-3">
-              {fa ? "زبان" : "Language"}
-            </p>
-            <div className="space-y-2">
-              {langOptions.map(opt => (
-                <button key={opt.value} onClick={() => setLang(opt.value)} className={cn(btnBase, lang === opt.value ? btnActive : btnInactive)}>
-                  <div>
-                    <div className={lang === opt.value ? txtActive : txtInactive}>{opt.label}</div>
-                    <div className={lang === opt.value ? subActive : subInactive}>{opt.sub}</div>
-                  </div>
-                  {lang === opt.value && <div className="w-2 h-2 rounded-full bg-white dark:bg-zinc-900 flex-shrink-0" />}
-                </button>
-              ))}
-            </div>
-          </div>
+          <div className="p-6 space-y-6">
 
-          {/* Calendar */}
-          <div>
-            <p className="text-xs font-medium uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-3">
-              {fa ? "تقویم" : "Calendar"}
-            </p>
-            <div className="space-y-2">
-              {calOptions.map(opt => (
-                <button key={opt.value} onClick={() => setCal(opt.value)} className={cn(btnBase, cal === opt.value ? btnActive : btnInactive)}>
-                  <div>
-                    <div className={cal === opt.value ? txtActive : txtInactive}>{opt.label}</div>
-                    <div className={cal === opt.value ? subActive : subInactive}>{opt.sub}</div>
-                  </div>
-                  {cal === opt.value && <div className="w-2 h-2 rounded-full bg-white dark:bg-zinc-900 flex-shrink-0" />}
-                </button>
-              ))}
+            {/* Language */}
+            <div>
+              <p className="text-xs font-medium uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-3">
+                {fa ? "زبان" : "Language"}
+              </p>
+              <div className="space-y-2">
+                {langOptions.map(opt => (
+                  <button key={opt.value} onClick={() => setLang(opt.value)} className={cn(btnBase, lang === opt.value ? btnActive : btnInactive)}>
+                    <div>
+                      <div className={lang === opt.value ? txtActive : txtInactive}>{opt.label}</div>
+                      <div className={lang === opt.value ? subActive : subInactive}>{opt.sub}</div>
+                    </div>
+                    {lang === opt.value && <div className="w-2 h-2 rounded-full bg-white dark:bg-zinc-900 flex-shrink-0" />}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Currency */}
-          <div>
-            <p className="text-xs font-medium uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-3">
-              {fa ? "ارز پیش‌فرض" : "Default currency"}
-            </p>
-            <div className="grid grid-cols-5 gap-2">
-              {CURRENCIES.map(c => (
-                <button key={c} onClick={() => setCurrency(c)}
-                  className={cn(
-                    "rounded-xl border py-2 text-xs font-medium transition",
-                    currency === c
-                      ? "border-zinc-900 dark:border-white bg-zinc-900 dark:bg-white text-white dark:text-zinc-900"
-                      : "border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-500",
-                  )}>
-                  {c}
-                </button>
-              ))}
+            {/* Calendar */}
+            <div>
+              <p className="text-xs font-medium uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-3">
+                {fa ? "تقویم" : "Calendar"}
+              </p>
+              <div className="space-y-2">
+                {calOptions.map(opt => (
+                  <button key={opt.value} onClick={() => setCal(opt.value)} className={cn(btnBase, cal === opt.value ? btnActive : btnInactive)}>
+                    <div>
+                      <div className={cal === opt.value ? txtActive : txtInactive}>{opt.label}</div>
+                      <div className={cal === opt.value ? subActive : subInactive}>{opt.sub}</div>
+                    </div>
+                    {cal === opt.value && <div className="w-2 h-2 rounded-full bg-white dark:bg-zinc-900 flex-shrink-0" />}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* Currency */}
+            <div>
+              <p className="text-xs font-medium uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-3">
+                {fa ? "ارز پیش‌فرض" : "Default currency"}
+              </p>
+              <div className="grid grid-cols-5 gap-2">
+                {CURRENCIES.map(c => (
+                  <button key={c} onClick={() => setCurrency(c)}
+                    className={cn(
+                      "rounded-xl border py-2 text-xs font-medium transition",
+                      currency === c
+                        ? "border-zinc-900 dark:border-white bg-zinc-900 dark:bg-white text-white dark:text-zinc-900"
+                        : "border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:border-zinc-400 dark:hover:border-zinc-500",
+                    )}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Appearance & account */}
+            <div>
+              <p className="text-xs font-medium uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-3">
+                {fa ? "حساب و ظاهر" : "Account & appearance"}
+              </p>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between rounded-2xl border border-zinc-200 dark:border-zinc-700 px-4 py-3">
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                    {fa ? "اعلان‌ها" : "Notifications"}
+                  </span>
+                  <NotificationToggle />
+                </div>
+                <div className="flex items-center justify-between rounded-2xl border border-zinc-200 dark:border-zinc-700 px-4 py-3">
+                  <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                    {fa ? "تم" : "Theme"}
+                  </span>
+                  <ThemeToggle />
+                </div>
+                <button
+                  onClick={() => void signOut({ callbackUrl: "/login" })}
+                  className="flex items-center justify-between rounded-2xl border border-red-200 dark:border-red-900/40 px-4 py-3 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition"
+                >
+                  <span className="text-sm font-medium">{fa ? "خروج از حساب" : "Sign out"}</span>
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
           </div>
-        </div>
         </div>
       </div>
     </div>

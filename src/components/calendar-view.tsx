@@ -39,6 +39,21 @@ type Payment = {
 	paidAt: Date | null;
 };
 
+const LOAN_COLORS = [
+	"#ef4444",
+	"#f97316",
+	"#eab308",
+	"#22c55e",
+	"#06b6d4",
+	"#3b82f6",
+	"#a855f7",
+	"#ec4899",
+];
+function loanColor(id: string): string {
+	let h = 0;
+	for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+	return LOAN_COLORS[Math.abs(h) % LOAN_COLORS.length];
+}
 export function CalendarView(props: { loans: Loan[]; allPayments: Payment[] }) {
 	return (
 		<CalendarProvider>
@@ -196,7 +211,11 @@ function CalendarInner({
 						onClick={prevMonth}
 						className="p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
 					>
-						<ChevronRight className="w-5 h-5" />
+						{fa ? (
+							<ChevronRight className="w-5 h-5" />
+						) : (
+							<ChevronLeft className="w-5 h-5" />
+						)}
 					</button>
 					<h2 className="font-semibold text-lg text-zinc-900 dark:text-white">
 						{monthLabel}
@@ -206,7 +225,11 @@ function CalendarInner({
 						onClick={nextMonth}
 						className="p-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
 					>
-						<ChevronLeft className="w-5 h-5" />
+						{fa ? (
+							<ChevronLeft className="w-5 h-5" />
+						) : (
+							<ChevronRight className="w-5 h-5" />
+						)}
 					</button>
 				</div>
 
@@ -250,19 +273,21 @@ function CalendarInner({
 												: "text-zinc-700 dark:text-zinc-300",
 										)}
 									>
-										{cal === "jalali" ? day.toLocaleString("fa-IR") : day}
+										{cal === "jalali"
+											? day.toLocaleString(`${fa ? "fa" : "en"}-IR`)
+											: day}
 									</span>
 									{dueLoanInfos.length > 0 && (
 										<div className="flex gap-0.5">
 											{dueLoanInfos.slice(0, 3).map(({ loan, paid }) => (
 												<div
 													key={loan.id}
-													className={cn(
-														"w-1.5 h-1.5 rounded-full",
-														paid
-															? "bg-zinc-400 dark:bg-zinc-500"
-															: "bg-zinc-900 dark:bg-white",
-													)}
+													className="w-1.5 h-1.5 rounded-full"
+													style={{
+														backgroundColor: paid
+															? "#a1a1aa"
+															: loanColor(loan.id),
+													}}
 												/>
 											))}
 										</div>
@@ -289,42 +314,45 @@ function CalendarInner({
 								);
 								const paid = payment?.paid ?? false;
 								return (
-									<div
+									<Link
+										href={`/loans/${l.id}`}
+										className="min-w-0 flex-1 hover:opacity-75 transition"
 										key={l.id}
-										className={cn(
-											"flex items-center gap-3 px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900",
-											paid && "opacity-55",
-										)}
 									>
 										<div
 											className={cn(
-												"w-2 h-2 rounded-full flex-shrink-0",
-												paid
-													? "bg-zinc-300 dark:bg-zinc-600"
-													: "bg-zinc-900 dark:bg-white",
+												"flex items-center gap-3 px-4 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900",
+												paid && "opacity-55",
 											)}
-										/>
-										<div className="flex-1 min-w-0">
+										>
 											<div
-												className={cn(
-													"text-sm font-medium",
-													paid &&
-														"line-through text-zinc-400 dark:text-zinc-500",
-												)}
-											>
-												{l.name}
+												className="w-2 h-2 rounded-full flex-shrink-0"
+												style={{
+													backgroundColor: paid ? "#a1a1aa" : loanColor(l.id),
+												}}
+											/>
+											<div className="flex-1 min-w-0">
+												<div
+													className={cn(
+														"text-sm font-medium",
+														paid &&
+															"line-through text-zinc-400 dark:text-zinc-500",
+													)}
+												>
+													{l.name}
+												</div>
+												<div className="text-xs text-zinc-400 dark:text-zinc-500">
+													{fa ? `روز ${l.dueDay}` : `Day ${l.dueDay}`} ·{" "}
+													{l.amount.toLocaleString()} {l.currency}
+												</div>
 											</div>
-											<div className="text-xs text-zinc-400 dark:text-zinc-500">
-												{fa ? `روز ${l.dueDay}` : `Day ${l.dueDay}`} ·{" "}
-												{l.amount.toLocaleString()} {l.currency}
-											</div>
+											{paid && (
+												<span className="text-xs text-zinc-400">
+													{fa ? "پرداخت شد" : "Paid"}
+												</span>
+											)}
 										</div>
-										{paid && (
-											<span className="text-xs text-zinc-400">
-												{fa ? "پرداخت شد" : "Paid"}
-											</span>
-										)}
-									</div>
+									</Link>
 								);
 							})}
 						</div>

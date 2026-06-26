@@ -56,8 +56,11 @@ export function isCurrentMonth(gYear: number, gMonth: number, cal: CalendarType)
   return gYear === now.getFullYear() && gMonth === now.getMonth() + 1;
 }
 
-export function formatDueDay(day: number, cal: CalendarType) {
-  if (cal === "jalali") return `هر ماه روز ${day}`;
+export function formatDueDay(day: number, cal: CalendarType, lang: "fa" | "en" = "fa") {
+  if (cal === "jalali") {
+    if (lang === "fa") return `هر ماه روز ${day}`;
+    return `Day ${day} of each month`;
+  }
   const s = ["th","st","nd","rd"];
   const v = day % 100;
   return `Due ${day}${s[(v - 20) % 10] ?? s[v] ?? s[0]} of each month`;
