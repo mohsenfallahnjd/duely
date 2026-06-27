@@ -918,42 +918,39 @@ const MonthCard = memo(function MonthCard({
 											paid && "opacity-40",
 										)}
 									>
-										{/* Color dot + checkbox */}
-										<div className="relative shrink-0">
-											<button
-												type="button"
-												onClick={() =>
-													void onToggle(loan.id, year, month, !paid)
-												}
-												disabled={isLoading}
-												className={cn(
-													"w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
-													paid
-														? "bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white"
-														: isFuture
-															? "border-zinc-200 dark:border-zinc-700"
-															: isOverdue
-																? "border-red-300 dark:border-red-600 hover:border-red-500"
-																: "border-zinc-300 dark:border-zinc-600 hover:border-zinc-500 dark:hover:border-zinc-400",
-												)}
-											>
-												{isLoading ? (
-													<span className="w-2 h-2 rounded-full border border-zinc-300 border-t-zinc-700 dark:border-t-white animate-spin" />
-												) : paid ? (
-													<Check
-														className="w-3 h-3 text-white dark:text-zinc-900"
-														strokeWidth={3}
-													/>
-												) : null}
-											</button>
-											{/* loan color accent dot */}
-											{!paid && (
-												<span
-													className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full border border-white dark:border-zinc-900"
-													style={{ backgroundColor: loanColor(loan.id) }}
-												/>
+										{/* Checkbox */}
+										<button
+											type="button"
+											onClick={() =>
+												void onToggle(loan.id, year, month, !paid)
+											}
+											disabled={isLoading}
+											className={cn(
+												"w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all",
+												paid
+													? "bg-zinc-900 dark:bg-white border-zinc-900 dark:border-white"
+													: isFuture
+														? "border-zinc-200 dark:border-zinc-700"
+														: isOverdue
+															? "border-red-300 dark:border-red-600 hover:border-red-500"
+															: "border-zinc-300 dark:border-zinc-600 hover:border-zinc-500 dark:hover:border-zinc-400",
 											)}
-										</div>
+										>
+											{isLoading ? (
+												<span className="w-2 h-2 rounded-full border border-zinc-300 border-t-zinc-700 dark:border-t-white animate-spin" />
+											) : paid ? (
+												<Check
+													className="w-3 h-3 text-white dark:text-zinc-900"
+													strokeWidth={3}
+												/>
+											) : null}
+										</button>
+
+										{/* Color dot */}
+										<span
+											className="w-2 h-2 rounded-full shrink-0"
+											style={{ backgroundColor: paid ? "#d4d4d8" : loanColor(loan.id) }}
+										/>
 
 										{/* Name + meta */}
 										<Link
