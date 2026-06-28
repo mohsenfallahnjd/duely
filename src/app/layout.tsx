@@ -5,6 +5,7 @@ import { SessionProvider } from "@/components/session-provider";
 import { RegisterServiceWorker } from "@/components/register-sw";
 import { ThemeProvider } from "@/components/theme-provider";
 import { NavigationProgress } from "@/components/navigation-progress";
+import { UpdateToast } from "@/components/update-toast";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </Suspense>
           <Analytics />
           <RegisterServiceWorker />
+          <UpdateToast />
           <SessionProvider>{children}</SessionProvider>
         </ThemeProvider>
       </body>

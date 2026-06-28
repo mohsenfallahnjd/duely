@@ -1,5 +1,5 @@
 /* global caches, fetch, self */
-const CACHE = "qist-v1";
+const CACHE = "qist-v2";
 
 const PRECACHE = ["/", "/login", "/register", "/manifest.webmanifest", "/icon.svg"];
 
@@ -7,7 +7,8 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE).then((cache) =>
       Promise.all(PRECACHE.map((p) => cache.add(new Request(p, { credentials: "same-origin" })).catch(() => {})))
-    ).then(() => self.skipWaiting())
+    )
+    // No skipWaiting — wait for user to confirm update
   );
 });
 
@@ -17,6 +18,13 @@ self.addEventListener("activate", (event) => {
       Promise.all(keys.filter((k) => k !== CACHE && k.startsWith("qist-")).map((k) => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
+});
+
+// User confirmed update
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("push", (event) => {
@@ -37,7 +45,7 @@ self.addEventListener("notificationclick", (event) => {
   event.waitUntil(
     self.clients.matchAll({ type: "window" }).then((clients) => {
       if (clients.length) return clients[0].focus();
-      return self.clients.openWindow("/");
+      return self.clients.openWindow("/dashboard");
     })
   );
 });
@@ -84,7 +92,7 @@ self.addEventListener("fetch", (event) => {
           if (res.ok) await cache.put(request, res.clone());
           return res;
         } catch {
-          const fallback = await cache.match("/");
+          const fallback = await cache.match("/dashboard");
           return fallback ?? new Response("Offline", { status: 503 });
         }
       })
