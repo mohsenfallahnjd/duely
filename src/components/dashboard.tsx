@@ -215,9 +215,7 @@ function DashboardInner({
 		const now = new Date(today.year, today.month - 1, today.day);
 		if (cal === "jalali") {
 			const j = toJalali(today.year, today.month, today.day);
-			return fa
-				? `${j.day} ${JALALI_MONTHS[j.month - 1]} ${j.year}`
-				: `${JALALI_MONTHS[j.month - 1]} ${j.day}, ${j.year}`;
+			return `${j.day} ${JALALI_MONTHS[j.month - 1]} ${j.year}`;
 		}
 		return now.toLocaleDateString(fa ? "fa-IR" : "en-US", {
 			month: "short",
@@ -292,8 +290,16 @@ function DashboardInner({
 						<div className="flex items-center rounded-xl bg-zinc-100 dark:bg-zinc-800 p-1 gap-0.5">
 							{(
 								[
-									{ mode: "by-month", icon: <Rows3 className="w-3.5 h-3.5" />, label: fa ? "ماهانه" : "Monthly" },
-									{ mode: "by-loan",  icon: <LayoutList className="w-3.5 h-3.5" />, label: fa ? "وام‌ها" : "Loans" },
+									{
+										mode: "by-month",
+										icon: <Rows3 className="w-3.5 h-3.5" />,
+										label: fa ? "ماهانه" : "Monthly",
+									},
+									{
+										mode: "by-loan",
+										icon: <LayoutList className="w-3.5 h-3.5" />,
+										label: fa ? "وام‌ها" : "Loans",
+									},
 								] as const
 							).map(({ mode, icon, label }) => (
 								<button
@@ -313,7 +319,7 @@ function DashboardInner({
 							))}
 						</div>
 					)}
-					</div>
+				</div>
 
 				{/* Current month summary strip */}
 				{loans.length > 0 && Object.keys(currentMonthSummary).length > 0 && (
@@ -424,14 +430,18 @@ function DashboardInner({
 						className="flex flex-col items-center justify-center gap-1 text-zinc-900 dark:text-white"
 					>
 						<Rows3 className="w-5 h-5" />
-						<span className="text-[10px] font-medium">{fa ? "خانه" : "Home"}</span>
+						<span className="text-[10px] font-medium">
+							{fa ? "خانه" : "Home"}
+						</span>
 					</Link>
 					<Link
 						href="/calendar"
 						className="flex flex-col items-center justify-center gap-1 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition"
 					>
 						<CalendarDays className="w-5 h-5" />
-						<span className="text-[10px] font-medium">{fa ? "تقویم" : "Calendar"}</span>
+						<span className="text-[10px] font-medium">
+							{fa ? "تقویم" : "Calendar"}
+						</span>
 					</Link>
 					<button
 						type="button"
@@ -448,7 +458,9 @@ function DashboardInner({
 						className="flex flex-col items-center justify-center gap-1 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition"
 					>
 						<Settings className="w-5 h-5" />
-						<span className="text-[10px] font-medium">{fa ? "تنظیمات" : "Settings"}</span>
+						<span className="text-[10px] font-medium">
+							{fa ? "تنظیمات" : "Settings"}
+						</span>
 					</button>
 				</div>
 			</div>
@@ -921,9 +933,7 @@ const MonthCard = memo(function MonthCard({
 										{/* Checkbox */}
 										<button
 											type="button"
-											onClick={() =>
-												void onToggle(loan.id, year, month, !paid)
-											}
+											onClick={() => void onToggle(loan.id, year, month, !paid)}
 											disabled={isLoading}
 											className={cn(
 												"w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all",
@@ -949,7 +959,9 @@ const MonthCard = memo(function MonthCard({
 										{/* Color dot */}
 										<span
 											className="w-2 h-2 rounded-full shrink-0"
-											style={{ backgroundColor: paid ? "#d4d4d8" : loanColor(loan.id) }}
+											style={{
+												backgroundColor: paid ? "#d4d4d8" : loanColor(loan.id),
+											}}
 										/>
 
 										{/* Name + meta */}
