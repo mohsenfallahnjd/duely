@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Qist",
     short_name: "Qist",
     description: "Track and pay your monthly loans on time.",
-    start_url: "/",
+    start_url: "/dashboard",
     display: "standalone",
     background_color: "#09090b",
     theme_color: "#09090b",
