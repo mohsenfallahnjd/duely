@@ -3,226 +3,388 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { useCalendar } from "./calendar-context";
-import { toJalali, fromJalali, JALALI_MONTHS, GREGORIAN_MONTHS } from "@/lib/calendar";
+import {
+	toJalali,
+	fromJalali,
+	JALALI_MONTHS,
+	GREGORIAN_MONTHS,
+} from "@/lib/calendar";
 
-const CURRENCIES = ["USD", "EUR", "GBP", "IRR", "AED", "CAD", "AUD", "TRY", "CNY", "JPY"];
+const CURRENCIES = [
+	"USD",
+	"EUR",
+	"GBP",
+	"IRR",
+	"AED",
+	"CAD",
+	"AUD",
+	"TRY",
+	"CNY",
+	"JPY",
+];
 
 function formatAmount(raw: string) {
-  const digits = raw.replace(/[^0-9.]/g, "");
-  const parts = digits.split(".");
-  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  return parts.slice(0, 2).join(".");
+	const digits = raw.replace(/[^0-9.]/g, "");
+	const parts = digits.split(".");
+	parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+	return parts.slice(0, 2).join(".");
 }
-function parseAmount(f: string) { return f.replace(/,/g, ""); }
+function parseAmount(f: string) {
+	return f.replace(/,/g, "");
+}
 
 type StartMode = "this" | "next" | "custom";
 
-export function AddLoanModal({ onClose, onAdd }: {
-  onClose: () => void;
-  onAdd: (data: {
-    name: string; amount: number; currency: string; dueDay: number;
-    paymentUrl: string; installments: number | null;
-    startYear: number; startMonth: number;
-  }) => Promise<void>;
+export function AddLoanModal({
+	onClose,
+	onAdd,
+}: {
+	onClose: () => void;
+	onAdd: (data: {
+		name: string;
+		amount: number;
+		currency: string;
+		dueDay: number;
+		paymentUrl: string;
+		installments: number | null;
+		startYear: number;
+		startMonth: number;
+	}) => Promise<void>;
 }) {
-  const { cal, lang, currency: defaultCurrency } = useCalendar();
-  const fa = lang === "fa";
-  const shamsi = cal === "jalali"; // calendar display only
+	const { cal, lang, currency: defaultCurrency } = useCalendar();
+	const fa = lang === "fa";
+	const shamsi = cal === "jalali"; // calendar display only
 
-  const now = new Date();
-  const gYear = now.getFullYear();
-  const gMonth = now.getMonth() + 1;
-  const thisJalali = toJalali(gYear, gMonth, now.getDate()); // actual day for correct Jalali month display
-  const nextG = gMonth === 12 ? { year: gYear + 1, month: 1 } : { year: gYear, month: gMonth + 1 };
-  // next Jalali month = thisJalali.month+1 (not next Gregorian month via midpoint)
-  const nextJalaliMonth = thisJalali.month === 12 ? 1 : thisJalali.month + 1;
-  const nextJalaliYear = thisJalali.month === 12 ? thisJalali.year + 1 : thisJalali.year;
-  const nextJalali = { year: nextJalaliYear, month: nextJalaliMonth };
-  const nextJalali2 = toJalali(nextG.year, nextG.month); // keep for Gregorian mode
+	const now = new Date();
+	const gYear = now.getFullYear();
+	const gMonth = now.getMonth() + 1;
+	const thisJalali = toJalali(gYear, gMonth, now.getDate()); // actual day for correct Jalali month display
+	const nextG =
+		gMonth === 12
+			? { year: gYear + 1, month: 1 }
+			: { year: gYear, month: gMonth + 1 };
+	// next Jalali month = thisJalali.month+1 (not next Gregorian month via midpoint)
+	const nextJalaliMonth = thisJalali.month === 12 ? 1 : thisJalali.month + 1;
+	const nextJalaliYear =
+		thisJalali.month === 12 ? thisJalali.year + 1 : thisJalali.year;
+	const nextJalali = { year: nextJalaliYear, month: nextJalaliMonth };
+	const nextJalali2 = toJalali(nextG.year, nextG.month); // keep for Gregorian mode
 
-  const [name, setName] = useState("");
-  const [amountDisplay, setAmountDisplay] = useState("");
-  const [currency, setCurrency] = useState(defaultCurrency);
-  const [dueDay, setDueDay] = useState("1");
-  const [paymentUrl, setPaymentUrl] = useState("");
-  const [installments, setInstallments] = useState("");
-  const [startMode, setStartMode] = useState<StartMode>("this");
-  const [customMonth, setCustomMonth] = useState(shamsi ? String(thisJalali.month) : String(gMonth));
-  const [customYear, setCustomYear] = useState(shamsi ? String(thisJalali.year) : String(gYear));
-  const [loading, setLoading] = useState(false);
-  const [isDebt, setIsDebt] = useState(false);
+	const [name, setName] = useState("");
+	const [amountDisplay, setAmountDisplay] = useState("");
+	const [currency, setCurrency] = useState(defaultCurrency);
+	const [dueDay, setDueDay] = useState("1");
+	const [paymentUrl, setPaymentUrl] = useState("");
+	const [installments, setInstallments] = useState("");
+	const [startMode, setStartMode] = useState<StartMode>("this");
+	const [customMonth, setCustomMonth] = useState(
+		shamsi ? String(thisJalali.month) : String(gMonth),
+	);
+	const [customYear, setCustomYear] = useState(
+		shamsi ? String(thisJalali.year) : String(gYear),
+	);
+	const [loading, setLoading] = useState(false);
+	const [isDebt, setIsDebt] = useState(false);
 
-  function resolveStart(): { startYear: number; startMonth: number } {
-    if (startMode === "this") {
-      if (shamsi) { const g = fromJalali(thisJalali.year, thisJalali.month, 15); return { startYear: g.year, startMonth: g.month }; }
-      return { startYear: gYear, startMonth: gMonth };
-    }
-    if (startMode === "next") {
-      if (shamsi) { const g = fromJalali(nextJalali.year, nextJalali.month, 15); return { startYear: g.year, startMonth: g.month }; }
-      return { startYear: nextG.year, startMonth: nextG.month };
-    }
-    const jm = parseInt(customMonth, 10);
-    const jy = parseInt(customYear, 10);
-    if (isNaN(jm) || isNaN(jy)) return { startYear: gYear, startMonth: gMonth };
-    if (shamsi) {
-      const g = fromJalali(jy, jm, 15);
-      if (isNaN(g.year) || isNaN(g.month)) return { startYear: gYear, startMonth: gMonth };
-      return { startYear: g.year, startMonth: g.month };
-    }
-    return { startYear: jy, startMonth: jm };
-  }
+	function resolveStart(): { startYear: number; startMonth: number } {
+		if (startMode === "this") {
+			if (shamsi) {
+				const g = fromJalali(thisJalali.year, thisJalali.month, 15);
+				return { startYear: g.year, startMonth: g.month };
+			}
+			return { startYear: gYear, startMonth: gMonth };
+		}
+		if (startMode === "next") {
+			if (shamsi) {
+				const g = fromJalali(nextJalali.year, nextJalali.month, 15);
+				return { startYear: g.year, startMonth: g.month };
+			}
+			return { startYear: nextG.year, startMonth: nextG.month };
+		}
+		const jm = Number.parseInt(customMonth, 10);
+		const jy = Number.parseInt(customYear, 10);
+		if (isNaN(jm) || isNaN(jy)) return { startYear: gYear, startMonth: gMonth };
+		if (shamsi) {
+			const g = fromJalali(jy, jm, 15);
+			if (isNaN(g.year) || isNaN(g.month))
+				return { startYear: gYear, startMonth: gMonth };
+			return { startYear: g.year, startMonth: g.month };
+		}
+		return { startYear: jy, startMonth: jm };
+	}
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const amount = parseFloat(parseAmount(amountDisplay));
-    if (!name || !amount || !dueDay) return;
-    setLoading(true);
-    await onAdd({
-      name: name.trim(), amount, currency,
-      dueDay: parseInt(dueDay, 10),
-      paymentUrl: paymentUrl.trim(),
-      installments: installments ? parseInt(installments, 10) : null,
-      ...resolveStart(),
-    });
-    setLoading(false);
-  }
+	async function submit(e: React.FormEvent) {
+		e.preventDefault();
+		const amount = Number.parseFloat(parseAmount(amountDisplay));
+		if (!name || !amount || !dueDay) return;
+		setLoading(true);
+		await onAdd({
+			name: name.trim(),
+			amount,
+			currency,
+			dueDay: Number.parseInt(dueDay, 10),
+			paymentUrl: paymentUrl.trim(),
+			installments: installments ? Number.parseInt(installments, 10) : null,
+			...resolveStart(),
+		});
+		setLoading(false);
+	}
 
-  const inputCls = "mt-1.5 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-zinc-900 dark:text-white placeholder-zinc-400 outline-none focus:border-zinc-900 dark:focus:border-white transition text-sm";
+	const inputCls =
+		"mt-1.5 w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 px-3 py-2.5 text-zinc-900 dark:text-white placeholder-zinc-400 outline-none focus:border-zinc-900 dark:focus:border-white transition text-sm";
 
-  const startOptions: { value: StartMode; label: string; sub: string }[] = [
-    {
-      value: "this",
-      label: fa ? "ماه جاری" : "This month",
-      sub: shamsi ? JALALI_MONTHS[thisJalali.month - 1] + " " + thisJalali.year : GREGORIAN_MONTHS[gMonth - 1] + " " + gYear,
-    },
-    {
-      value: "next",
-      label: fa ? "ماه آینده" : "Next month",
-      sub: shamsi ? JALALI_MONTHS[nextJalali.month - 1] + " " + nextJalali.year : GREGORIAN_MONTHS[nextG.month - 1] + " " + nextG.year,
-    },
-    { value: "custom", label: fa ? "انتخاب ماه" : "Custom", sub: "" },
-  ];
+	const startOptions: { value: StartMode; label: string; sub: string }[] = [
+		{
+			value: "this",
+			label: fa ? "ماه جاری" : "This month",
+			sub: shamsi
+				? JALALI_MONTHS[thisJalali.month - 1] + " " + thisJalali.year
+				: GREGORIAN_MONTHS[gMonth - 1] + " " + gYear,
+		},
+		{
+			value: "next",
+			label: fa ? "ماه آینده" : "Next month",
+			sub: shamsi
+				? JALALI_MONTHS[nextJalali.month - 1] + " " + nextJalali.year
+				: GREGORIAN_MONTHS[nextG.month - 1] + " " + nextG.year,
+		},
+		{ value: "custom", label: fa ? "انتخاب ماه" : "Custom", sub: "" },
+	];
 
-  const months = shamsi ? JALALI_MONTHS : GREGORIAN_MONTHS;
+	const months = shamsi ? JALALI_MONTHS : GREGORIAN_MONTHS;
 
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <div className="relative w-full max-w-lg mx-auto bg-white dark:bg-zinc-900 rounded-t-3xl shadow-2xl max-h-[90dvh] flex flex-col sheet-enter" onClick={e => e.stopPropagation()}>
-        <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
-          <div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-600" />
-        </div>
-        <div className="flex items-center justify-between px-6 py-3 border-b border-zinc-100 dark:border-zinc-800 flex-shrink-0">
-          <h2 className="font-semibold text-zinc-900 dark:text-white">{fa ? "قرارداد جدید" : "New payment"}</h2>
-          <button onClick={onClose} className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="overflow-y-auto flex-1">
-        <form onSubmit={(e) => void submit(e)} className="p-6 space-y-4">
-          <label className="block">
-            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{fa ? "نام" : "Name"}</span>
-            <input type="text" required placeholder={fa ? "مثال: وام خودرو" : "e.g. Car loan, Mortgage"} value={name} onChange={e => setName(e.target.value)} className={inputCls} />
-          </label>
+	return (
+		<div
+			className="fixed inset-0 z-50 flex flex-col justify-end"
+			onClick={onClose}
+		>
+			<div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+			<div
+				className="relative w-full max-w-lg mx-auto bg-white dark:bg-zinc-900 rounded-t-3xl shadow-2xl max-h-[90dvh] flex flex-col sheet-enter"
+				onClick={(e) => e.stopPropagation()}
+			>
+				<div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+					<div className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-600" />
+				</div>
+				<div className="flex items-center justify-between px-6 py-3 border-b border-zinc-100 dark:border-zinc-800 flex-shrink-0">
+					<h2 className="font-semibold text-zinc-900 dark:text-white">
+						{fa ? "قرارداد جدید" : "New payment"}
+					</h2>
+					<button
+						onClick={onClose}
+						className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition"
+					>
+						<X className="w-4 h-4" />
+					</button>
+				</div>
+				<div className="overflow-y-auto flex-1">
+					<form onSubmit={(e) => void submit(e)} className="p-6 space-y-4">
+						<label className="block">
+							<span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+								{fa ? "نام" : "Name"}
+							</span>
+							<input
+								type="text"
+								required
+								placeholder={fa ? "مثال: وام خودرو" : "e.g. Car loan, Mortgage"}
+								value={name}
+								onChange={(e) => setName(e.target.value)}
+								className={inputCls}
+							/>
+						</label>
 
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block">
-              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{fa ? "مبلغ" : "Amount"}</span>
-              <input type="text" inputMode="decimal" required placeholder="0" value={amountDisplay} onChange={e => setAmountDisplay(formatAmount(e.target.value))} className={inputCls} />
-            </label>
-            <label className="block">
-              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{fa ? "ارز" : "Currency"}</span>
-              <select value={currency} onChange={e => setCurrency(e.target.value)} className={inputCls}>
-                {CURRENCIES.map(c => <option key={c}>{c}</option>)}
-              </select>
-            </label>
-          </div>
+						<div className="grid grid-cols-2 gap-3">
+							<label className="block">
+								<span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+									{fa ? "مبلغ" : "Amount"}
+								</span>
+								<input
+									type="text"
+									inputMode="decimal"
+									required
+									placeholder="0"
+									value={amountDisplay}
+									onChange={(e) =>
+										setAmountDisplay(formatAmount(e.target.value))
+									}
+									className={inputCls}
+								/>
+							</label>
+							<label className="block">
+								<span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+									{fa ? "ارز" : "Currency"}
+								</span>
+								<select
+									value={currency}
+									onChange={(e) => setCurrency(e.target.value)}
+									className={inputCls}
+								>
+									{CURRENCIES.map((c) => (
+										<option key={c}>{c}</option>
+									))}
+								</select>
+							</label>
+						</div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block">
-              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{fa ? "روز سررسید" : "Due day"}</span>
-              <input type="number" required min="1" max="31" value={dueDay} onChange={e => setDueDay(e.target.value)} className={inputCls} />
-            </label>
-            <label className="block">
-              <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                {fa ? "تعداد اقساط" : "Installments"}
-                <span className="text-zinc-400 font-normal"> ({fa ? "اختیاری" : "opt"})</span>
-              </span>
-              <input type="number" min="1" placeholder={fa ? "نامحدود" : "∞"} value={installments} onChange={e => setInstallments(e.target.value)} className={inputCls} />
-            </label>
-          </div>
+						<div className="grid grid-cols-2 gap-3">
+							<label className="block">
+								<span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+									{fa ? "روز سررسید" : "Due day"}
+								</span>
+								<input
+									type="number"
+									required
+									min="1"
+									max="31"
+									value={dueDay}
+									onChange={(e) => setDueDay(e.target.value)}
+									className={inputCls}
+								/>
+							</label>
+							<label className="block">
+								<span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+									{fa ? "تعداد اقساط" : "Installments"}
+									<span className="text-zinc-400 font-normal">
+										{" "}
+										({fa ? "اختیاری" : "opt"})
+									</span>
+								</span>
+								<input
+									type="number"
+									min="1"
+									placeholder={fa ? "نامحدود" : "∞"}
+									value={installments}
+									onChange={(e) => setInstallments(e.target.value)}
+									className={inputCls}
+								/>
+							</label>
+						</div>
 
-          {/* Start date */}
-          <div>
-            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{fa ? "از چه ماهی" : "Starting from"}</span>
-            <div className="grid grid-cols-3 gap-2 mt-1.5">
-              {startOptions.map(opt => (
-                <button key={opt.value} type="button" onClick={() => setStartMode(opt.value)}
-                  className={`rounded-xl border px-2 py-2.5 text-left transition ${startMode === opt.value ? "border-zinc-900 dark:border-white bg-zinc-900 dark:bg-white" : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-400"}`}>
-                  <div className={`text-xs font-medium ${startMode === opt.value ? "text-white dark:text-zinc-900" : "text-zinc-900 dark:text-white"}`}>{opt.label}</div>
-                  {opt.sub && <div className={`text-xs mt-0.5 ${startMode === opt.value ? "text-zinc-300 dark:text-zinc-600" : "text-zinc-400"}`}>{opt.sub}</div>}
-                </button>
-              ))}
-            </div>
-            {startMode === "custom" && (
-              <div className="grid grid-cols-2 gap-3 mt-3">
-                <label className="block">
-                  <span className="text-xs text-zinc-500">{fa ? "ماه" : "Month"}</span>
-                  <select value={customMonth} onChange={e => setCustomMonth(e.target.value)} className={inputCls}>
-                    {months.map((m, i) => <option key={i + 1} value={i + 1}>{m}</option>)}
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="text-xs text-zinc-500">{fa ? "سال" : "Year"}</span>
-                  <input type="number" value={customYear} onChange={e => setCustomYear(e.target.value)} className={inputCls} />
-                </label>
-              </div>
-            )}
-          </div>
+						{/* Start date */}
+						<div>
+							<span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+								{fa ? "از چه ماهی" : "Starting from"}
+							</span>
+							<div className="grid grid-cols-3 gap-2 mt-1.5">
+								{startOptions.map((opt) => (
+									<button
+										key={opt.value}
+										type="button"
+										onClick={() => setStartMode(opt.value)}
+										className={`rounded-xl border px-2 py-2.5 text-left transition ${startMode === opt.value ? "border-zinc-900 dark:border-white bg-zinc-900 dark:bg-white" : "border-zinc-200 dark:border-zinc-700 hover:border-zinc-400"}`}
+									>
+										<div
+											className={`text-xs font-medium ${startMode === opt.value ? "text-white dark:text-zinc-900" : "text-zinc-900 dark:text-white"}`}
+										>
+											{opt.label}
+										</div>
+										{opt.sub && (
+											<div
+												className={`text-xs mt-0.5 ${startMode === opt.value ? "text-zinc-300 dark:text-zinc-600" : "text-zinc-400"}`}
+											>
+												{opt.sub}
+											</div>
+										)}
+									</button>
+								))}
+							</div>
+							{startMode === "custom" && (
+								<div className="grid grid-cols-2 gap-3 mt-3">
+									<label className="block">
+										<span className="text-xs text-zinc-500">
+											{fa ? "ماه" : "Month"}
+										</span>
+										<select
+											value={customMonth}
+											onChange={(e) => setCustomMonth(e.target.value)}
+											className={inputCls}
+										>
+											{months.map((m, i) => (
+												<option key={i + 1} value={i + 1}>
+													{m}
+												</option>
+											))}
+										</select>
+									</label>
+									<label className="block">
+										<span className="text-xs text-zinc-500">
+											{fa ? "سال" : "Year"}
+										</span>
+										<input
+											type="number"
+											value={customYear}
+											onChange={(e) => setCustomYear(e.target.value)}
+											className={inputCls}
+										/>
+									</label>
+								</div>
+							)}
+						</div>
 
-          <label className="block">
-            <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              {fa ? "لینک پرداخت" : "Payment link"}
-              <span className="text-zinc-400 font-normal"> ({fa ? "اختیاری" : "opt"})</span>
-            </span>
-            <input type="url" placeholder="https://" value={paymentUrl} onChange={e => setPaymentUrl(e.target.value)} className={inputCls} />
-          </label>
+						<label className="block">
+							<span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+								{fa ? "لینک پرداخت" : "Payment link"}
+								<span className="text-zinc-400 font-normal">
+									{" "}
+									({fa ? "اختیاری" : "opt"})
+								</span>
+							</span>
+							<input
+								type="url"
+								placeholder="https://"
+								value={paymentUrl}
+								onChange={(e) => setPaymentUrl(e.target.value)}
+								className={inputCls}
+							/>
+						</label>
 
-          {/* Debt toggle */}
-          <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/60">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
-                {fa ? "بدهی شخصی" : "Personal debt"}
-              </span>
-              <span className="text-xs text-zinc-400 dark:text-zinc-500">
-                {fa ? "پرداخت به فرد، نه بانک" : "Owed to a person, not a bank"}
-              </span>
-            </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={isDebt}
-              onClick={() => setIsDebt(d => !d)}
-              className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
-                isDebt
-                  ? "bg-zinc-900 dark:bg-white focus-visible:outline-zinc-900"
-                  : "bg-zinc-200 dark:bg-zinc-700 focus-visible:outline-zinc-400"
-              }`}
-            >
-              <span
-                className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white dark:bg-zinc-900 shadow-sm transition-transform duration-200 ${
-                  isDebt ? "translate-x-5" : "translate-x-0"
-                }`}
-              />
-            </button>
-          </div>
+						{/* Debt toggle */}
+						<div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/60">
+							<div className="flex flex-col gap-0.5">
+								<span className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
+									{fa ? "بدهی شخصی" : "Personal debt"}
+								</span>
+								<span className="text-xs text-zinc-400 dark:text-zinc-500">
+									{fa
+										? "پرداخت به فرد، نه بانک"
+										: "Owed to a person, not a bank"}
+								</span>
+							</div>
+							<button
+								type="button"
+								role="switch"
+								aria-checked={isDebt}
+								onClick={() => setIsDebt((d) => !d)}
+								className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+									isDebt
+										? "bg-zinc-900 dark:bg-white focus-visible:outline-zinc-900"
+										: "bg-zinc-200 dark:bg-zinc-700 focus-visible:outline-zinc-400"
+								}`}
+							>
+								<span
+									className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white dark:bg-zinc-900 shadow-sm transition-transform duration-200 ${
+										isDebt ? "translate-x-5" : "translate-x-0"
+									}`}
+								/>
+							</button>
+						</div>
 
-          <button type="submit" disabled={loading} className="w-full rounded-2xl bg-zinc-900 dark:bg-white py-3 text-sm font-semibold text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-200 disabled:opacity-60 transition">
-            {loading ? (fa ? "در حال ذخیره…" : "Adding…") : (fa ? "افزودن" : "Add loan")}
-          </button>
-        </form>
-        </div>
-      </div>
-    </div>
-  );
+						<button
+							type="submit"
+							disabled={loading}
+							className="w-full rounded-2xl bg-zinc-900 dark:bg-white py-3 text-sm font-semibold text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-200 disabled:opacity-60 transition"
+						>
+							{loading
+								? fa
+									? "در حال ذخیره…"
+									: "Adding…"
+								: fa
+									? "افزودن"
+									: "Add loan"}
+						</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	);
 }
