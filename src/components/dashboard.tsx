@@ -280,7 +280,10 @@ function DashboardInner({
 						<span className="text-lg font-black tracking-[-0.04em] text-zinc-900 dark:text-white leading-none">
 							qist
 						</span>
-						<span className="text-[10px] text-zinc-400 dark:text-zinc-500 tabular-nums mt-2	 leading-none">
+						<span
+							className="text-[10px] text-zinc-400 dark:text-zinc-500 tabular-nums mt-2 leading-none"
+							style={{ unicodeBidi: "plaintext" }}
+						>
 							{todayLabel}
 						</span>
 					</div>
