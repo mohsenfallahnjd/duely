@@ -32,10 +32,12 @@ export function NotificationToggle() {
           userVisibleOnly: true,
           applicationServerKey: key,
         });
+        const lang = localStorage.getItem("qist-lang") ?? "en";
+        const cal = localStorage.getItem("qist-calendar") ?? "gregorian";
         await fetch("/api/push", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(sub),
+          body: JSON.stringify({ ...sub.toJSON(), lang, cal }),
         });
         setEnabled(true);
       }

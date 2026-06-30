@@ -1,6 +1,7 @@
 import { requireDb } from "@/db";
 import { loans, payments, pushSubscriptions } from "@/db/schema";
-import { eq, and, ne } from "drizzle-orm";
+import { toJalali } from "@/lib/calendar";
+import { eq, and } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import webpush from "web-push";
 
@@ -25,6 +26,8 @@ export async function GET(req: Request) {
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
   const today = now.getDate();
+  const jalali = toJalali(year, month, today);
+  const gregorianDate = `${now.toLocaleString("en-US", { month: "short" })} ${today}`;
 
   const db = requireDb();
   const activeLoans = await db
@@ -52,10 +55,17 @@ export async function GET(req: Request) {
       .from(pushSubscriptions)
       .where(eq(pushSubscriptions.userId, userId));
     const userLoans = unpaidDue.filter((l) => l.userId === userId);
-    const body = userLoans.length === 1
-      ? `${userLoans[0].name} — ${userLoans[0].amount} ${userLoans[0].currency} due today`
-      : `${userLoans.length} loan payments due today`;
     for (const sub of subs) {
+      const dateStr = sub.cal === "jalali"
+        ? `${jalali.day} ${jalali.monthName}`
+        : gregorianDate;
+      const body = userLoans.length === 1
+        ? sub.lang === "fa"
+          ? `${userLoans[0].name} — ${userLoans[0].amount} ${userLoans[0].currency} — سررسید ${dateStr}`
+          : `${userLoans[0].name} — ${userLoans[0].amount} ${userLoans[0].currency} due ${dateStr}`
+        : sub.lang === "fa"
+          ? `${userLoans.length} قسط سررسید ${dateStr}`
+          : `${userLoans.length} loan payments due ${dateStr}`;
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },

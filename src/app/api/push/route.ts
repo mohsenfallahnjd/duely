@@ -11,6 +11,8 @@ export async function POST(req: Request) {
   if (!sub?.endpoint || !sub?.keys?.p256dh || !sub?.keys?.auth) {
     return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
   }
+  const lang = sub.lang === "fa" ? "fa" : "en";
+  const cal = sub.cal === "jalali" ? "jalali" : "gregorian";
   const db = requireDb();
   await db
     .insert(pushSubscriptions)
@@ -19,10 +21,12 @@ export async function POST(req: Request) {
       endpoint: sub.endpoint,
       p256dh: sub.keys.p256dh,
       auth: sub.keys.auth,
+      lang,
+      cal,
     })
     .onConflictDoUpdate({
       target: pushSubscriptions.endpoint,
-      set: { p256dh: sub.keys.p256dh, auth: sub.keys.auth },
+      set: { p256dh: sub.keys.p256dh, auth: sub.keys.auth, lang, cal },
     });
   return NextResponse.json({ ok: true });
 }
