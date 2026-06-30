@@ -282,7 +282,7 @@ function DashboardInner({
 						</span>
 						<span
 							className="text-[10px] text-zinc-400 dark:text-zinc-500 tabular-nums mt-2 leading-none"
-							style={{ unicodeBidi: "plaintext" }}
+							style={{ unicodeBidi: "plaintext", textAlign: "left" }}
 						>
 							{todayLabel}
 						</span>
